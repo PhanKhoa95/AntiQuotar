@@ -1,0 +1,29 @@
+{
+  "dryRun": true,
+  "lsPort": 5188,
+  "toolsDir": "tools",
+  "reportsDir": "reports",
+  "upstreams": [
+    {
+      "name": "Antigravity-Tools-LS",
+      "url": "https://github.com/lbjlaq/Antigravity-Tools-LS.git",
+      "path": "tools/Antigravity-Tools-LS"
+    },
+    {
+      "name": "antigravity-usage",
+      "url": "https://github.com/skainguyen1412/antigravity-usage.git",
+      "path": "tools/antigravity-usage"
+    },
+    {
+      "name": "AntigravityQuotaWatcher",
+      "url": "https://github.com/wusimpl/AntigravityQuotaWatcher.git",
+      "path": "tools/AntigravityQuotaWatcher"
+    }
+  ],
+  "safety": {
+    "promptBeforeInstall": true,
+    "promptBeforeBuild": true,
+    "promptBeforeStartingServices": true,
+    "writeTimestampedReports": true
+  }
+}

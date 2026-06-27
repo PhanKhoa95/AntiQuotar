@@ -1,0 +1,7 @@
+tools/
+reports/
+*.log
+*.tmp
+node_modules/
+dist/
+*.local
