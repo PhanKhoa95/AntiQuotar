@@ -321,6 +321,7 @@ export default function App() {
   const [importText, setImportText] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const isSwitchingActiveRef = useRef(false);
 
 
 
@@ -349,6 +350,7 @@ export default function App() {
       try {
         const url = new URL(settings.lsEndpoint);
         const switchUrl = `${url.protocol}//${url.host}/v1/accounts/active`;
+        isSwitchingActiveRef.current = true;
         fetch(switchUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -357,13 +359,22 @@ export default function App() {
           .then((res) => {
             if (!res.ok) {
               console.error("LS Gateway switch returned error status:", res.status);
+              isSwitchingActiveRef.current = false;
             } else {
               console.log("LS Gateway switch success. Triggering active quota refresh.");
-              runCheckRef.current('active');
+              const promise = runCheckRef.current('active');
+              if (promise && typeof promise.finally === 'function') {
+                promise.finally(() => {
+                  isSwitchingActiveRef.current = false;
+                });
+              } else {
+                isSwitchingActiveRef.current = false;
+              }
             }
           })
           .catch((err) => {
             console.error("Failed to sync active session to LS Gateway:", err);
+            isSwitchingActiveRef.current = false;
           });
       } catch (e) {
         console.error("Invalid lsEndpoint:", e);
@@ -657,7 +668,7 @@ export default function App() {
       setGatewayOnline(true);
       const json = await response.json();
       
-      if (json && json.activeId && json.activeId !== activeId) {
+      if (json && json.activeId && json.activeId !== activeId && !isSwitchingActiveRef.current) {
         setActiveId(json.activeId);
         setSelectedId(json.activeId);
       }
