@@ -1,13 +1,13 @@
 # Progress - AntiQuotar Active Account Switch & Synchronization
 
 ## Current Status
-Last visited: 2026-06-29T13:22:50+07:00
+Last visited: 2026-06-29T13:40:00+07:00
 
 - [x] Milestone 1: Previous Quota Fixes [Done]
 - [x] Milestone 2: Swapping Exploration [Done]
-- [ ] Milestone 3: Swapping Core Fixes [In-Progress]
-- [ ] Milestone 4: Interactive E2E Test [In-Progress]
-- [ ] Milestone 5: Verification and Integrity Audit [Planned]
+- [x] Milestone 3: Swapping Core Fixes [Done]
+- [x] Milestone 4: Interactive E2E Test [Done]
+- [ ] Milestone 5: Verification and Integrity Audit [In-Progress]
 
 
 ## Iteration Status
