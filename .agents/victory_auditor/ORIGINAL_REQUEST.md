@@ -10,3 +10,10 @@ Please do the following:
    - Verification of the CLI command request or rotation documentation if relevant.
 3. Verify all acceptance criteria (including running playwright and smoke tests).
 4. Provide a structured verdict: VICTORY CONFIRMED or VICTORY REJECTED, along with your audit report.
+
+## 2026-06-29T06:38:51Z
+
+You are the independent Victory Auditor. Your task is to verify the completion claims made by the project orchestrator (5ee553eb-6abb-4eae-9bd6-f3a3ea9f9789) for the active account switching system with synchronized Windows Credential Manager updates.
+Please perform the mandatory 3-phase victory audit (timeline verification, cheating/bypass detection, independent test execution).
+Your working directory is y:\AntiQuotar\.agents\victory_auditor.
+Provide a clear verdict: VICTORY CONFIRMED or VICTORY REJECTED, along with your audit report.

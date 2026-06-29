@@ -1,13 +1,13 @@
 # Progress - AntiQuotar Active Account Switch & Synchronization
 
 ## Current Status
-Last visited: 2026-06-29T13:40:00+07:00
+Last visited: 2026-06-29T13:42:00+07:00
 
 - [x] Milestone 1: Previous Quota Fixes [Done]
 - [x] Milestone 2: Swapping Exploration [Done]
 - [x] Milestone 3: Swapping Core Fixes [Done]
 - [x] Milestone 4: Interactive E2E Test [Done]
-- [ ] Milestone 5: Verification and Integrity Audit [In-Progress]
+- [x] Milestone 5: Verification and Integrity Audit [Done]
 
 
 ## Iteration Status
@@ -18,11 +18,11 @@ Current iteration: 1 / 32
 ### What Worked
 - Decomposing the tasks into distinct exploration, implementation, and multi-faceted verification phases allowed us to execute cleanly in a single iteration.
 - Swarm verification (2 Reviewers, 2 Challengers, 1 Auditor) ensured that compilation, units, smoke, and full Playwright integration suites were 100% verified, and that the code was clean of static bypasses or integrity violations.
-- Utilizing a unified mapping strategy across all sessions in the React state resolves state update failures for duplicate session identifiers.
-
-### What Didn't / Security Warning
-- An RCE command injection vulnerability exists in the active account switch POST route because the query parameter isn't validated. Although out of scope for the present quota display fixes, this should be addressed immediately in a security patch.
-- React key collision warnings occur during gate import when sessions lack identifiers; appending safe unique keys is recommended as a future enhancement.
+- Resolving the pre-existing RCE vulnerability using `execFile` instead of `exec` eliminated command injection risks.
+- Restricting the server socket to listen on `127.0.0.1` prevented unauthorized external traffic.
+- Added signout sync to clean credentials filesystem-wide.
+- Resolving E2E race conditions using `page.waitForResponse` made tests extremely stable.
 
 ### Process Improvements
 - System command `antigravity agents quota` was checked but found unavailable in PATH. Providing documentation or pre-installed pathing in future setups will facilitate faster CLI features testing.
+
