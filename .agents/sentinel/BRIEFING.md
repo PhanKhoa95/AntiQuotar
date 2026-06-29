@@ -1,25 +1,26 @@
-# BRIEFING — 2026-06-28T16:40:00Z
+# BRIEFING — 2026-06-29T09:35:46+07:00
 
 ## Mission
-Ensure quota synchronization (Gemini, Claude, GPT) between frontend, backend /v1/accounts and active session state is implemented and verified.
+Monitor orchestrator and auditor, report progress, and ensure victory audit passes before reporting success.
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: E:\AntiQuotar\.agents\sentinel
-- Orchestrator: TBD
+- Working directory: y:\AntiQuotar\.agents\sentinel
+- Orchestrator: aba30ee2-edbc-4863-b0d2-4a61c9d58026
 - Victory Auditor: TBD
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
+- No direct human I/O (use send_message to main agent)
 
 ## User Context
-- **Last user request**: Develop synchronization mechanism and verification tests for model-specific quotas, active account CLI sync, interval migration, and automated Playwright test case.
-- **Pending clarifications**: none
-- **Delivered results**: none
+- **Last user request**: Fix quota detail value mismatch and ensure stable account updates.
+- **Pending clarifications**: [none]
+- **Delivered results**: [none]
 
 ## Project Status
-- **Phase**: not started
+- **Phase**: in progress
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -27,5 +28,4 @@ Ensure quota synchronization (Gemini, Claude, GPT) between frontend, backend /v1
 - **Retry count**: 0
 
 ## Artifact Index
-- E:\AntiQuotar\ORIGINAL_REQUEST.md — Verbatim user request record
-- E:\AntiQuotar\.agents\ORIGINAL_REQUEST.md — Verbatim user request record (agents folder copy)
+- y:\AntiQuotar\ORIGINAL_REQUEST.md — Verbatim user request
