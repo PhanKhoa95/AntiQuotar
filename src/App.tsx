@@ -639,7 +639,11 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(forceRefresh ? `${settings.lsEndpoint}?refresh=true` : settings.lsEndpoint, { method: "GET" });
+      const headers: HeadersInit = {};
+      if (forceRefresh) {
+        headers['x-refresh'] = 'true';
+      }
+      const response = await fetch(settings.lsEndpoint, { method: "GET", headers });
       if (!response.ok) {
         setGatewayOnline(false);
         addLog(`LS endpoint returned error status: ${response.status}`, "warning");
