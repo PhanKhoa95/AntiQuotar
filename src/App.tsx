@@ -585,7 +585,7 @@ export default function App() {
     }
   };
 
-  const runCheck = async () => {
+  const runCheck = async (forceRefresh: boolean = false) => {
     const checkedAt = nowIso();
     let rotatedTo: CookieSession | null = null;
 
@@ -639,7 +639,7 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(settings.lsEndpoint, { method: "GET" });
+      const response = await fetch(forceRefresh ? `${settings.lsEndpoint}?refresh=true` : settings.lsEndpoint, { method: "GET" });
       if (!response.ok) {
         setGatewayOnline(false);
         addLog(`LS endpoint returned error status: ${response.status}`, "warning");
@@ -1125,7 +1125,7 @@ export default function App() {
               <span className="dot" />
               Service: Local {gatewayOnline === null ? "" : gatewayOnline ? "(Bridge Online)" : "(Bridge Offline)"}
             </span>
-            <button className="button ghost" onClick={runCheck}>
+            <button className="button ghost" onClick={() => runCheck(true)}>
               <Play size={18} />
               Run Check
             </button>
@@ -1760,7 +1760,7 @@ export default function App() {
               </p>
             </div>
             <div className="modal-footer">
-              <button className="button primary" onClick={() => { setShowAddAccountModal(false); runCheck(); }}>
+              <button className="button primary" onClick={() => { setShowAddAccountModal(false); runCheck(true); }}>
                 Done
               </button>
             </div>
