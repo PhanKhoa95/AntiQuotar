@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --open",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "test:smoke": "node tests/smoke.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.4.1",

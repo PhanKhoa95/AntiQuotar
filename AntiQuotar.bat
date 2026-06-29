@@ -4,13 +4,49 @@ setlocal EnableExtensions EnableDelayedExpansion
 set "ROOT=%~dp0"
 for %%I in ("%ROOT%.") do set "ROOT=%%~fI"
 
+set "LS_PORT=5188"
+set "CONTROL_PORT=5173"
 set "TOOLS_DIR=%ROOT%\tools"
 set "REPORT_DIR=%ROOT%\reports"
+
+rem Default safety config values
+set "PROMPT_BEFORE_INSTALL=true"
+set "PROMPT_BEFORE_BUILD=true"
+set "PROMPT_BEFORE_STARTING_SERVICES=true"
+
+rem Load config from automation.json or automation.example.json
+set "CONFIG_FILE=%ROOT%\configs\automation.json"
+if not exist "%CONFIG_FILE%" set "CONFIG_FILE=%ROOT%\configs\automation.example.json"
+set "TEMP_BATCH=%TEMP%\antiquotar_config_%RANDOM%.bat"
+
+if not exist "%CONFIG_FILE%" goto no_config
+powershell -NoProfile -Command "$json = Get-Content -Raw -Path '%CONFIG_FILE%' | ConvertFrom-Json; $out = @(); if ($json.lsPort) { $out += 'set \"LS_PORT_CFG=' + $json.lsPort + '\"' }; if ($json.toolsDir) { $out += 'set \"TOOLS_DIR_CFG=' + $json.toolsDir + '\"' }; if ($json.reportsDir) { $out += 'set \"REPORT_DIR_CFG=' + $json.reportsDir + '\"' }; if ($json.safety) { if ($json.safety.promptBeforeInstall -ne $null) { $out += 'set \"PROMPT_BEFORE_INSTALL=' + $json.safety.promptBeforeInstall.ToString().ToLower() + '\"' }; if ($json.safety.promptBeforeBuild -ne $null) { $out += 'set \"PROMPT_BEFORE_BUILD=' + $json.safety.promptBeforeBuild.ToString().ToLower() + '\"' }; if ($json.safety.promptBeforeStartingServices -ne $null) { $out += 'set \"PROMPT_BEFORE_STARTING_SERVICES=' + $json.safety.promptBeforeStartingServices.ToString().ToLower() + '\"' } }; $out | Out-File -FilePath '%TEMP_BATCH%' -Encoding ascii" 2>nul
+:no_config
+
+if exist "%TEMP_BATCH%" (
+  call "%TEMP_BATCH%"
+  del "%TEMP_BATCH%"
+)
+
+if defined LS_PORT_CFG set "LS_PORT=%LS_PORT_CFG%"
+if defined TOOLS_DIR_CFG (
+  if "!TOOLS_DIR_CFG:~1,1!"==":" (
+    set "TOOLS_DIR=%TOOLS_DIR_CFG%"
+  ) else (
+    set "TOOLS_DIR=%ROOT%\%TOOLS_DIR_CFG%"
+  )
+)
+if defined REPORT_DIR_CFG (
+  if "!REPORT_DIR_CFG:~1,1!"==":" (
+    set "REPORT_DIR=%REPORT_DIR_CFG%"
+  ) else (
+    set "REPORT_DIR=%ROOT%\%REPORT_DIR_CFG%"
+  )
+)
+
 set "LS_REPO=%TOOLS_DIR%\Antigravity-Tools-LS"
 set "USAGE_REPO=%TOOLS_DIR%\antigravity-usage"
 set "WATCHER_REPO=%TOOLS_DIR%\AntigravityQuotaWatcher"
-set "LS_PORT=5188"
-set "CONTROL_PORT=5173"
 
 if /I "%~1"=="help" (
   call :help_text
@@ -22,6 +58,10 @@ if /I "%~1"=="check" (
 )
 if /I "%~1"=="sync" (
   call :sync_repos
+  exit /b 0
+)
+if /I "%~1"=="setup" (
+  call :setup_env
   exit /b 0
 )
 if /I "%~1"=="usage" (
@@ -84,10 +124,12 @@ echo  7. Build/install Quota Watcher VSIX
 echo  8. Write health report
 echo  9. Install Antigravity Tools LS release app
 echo  C. Open AntiQuotar Control CMS
+echo  S. Auto setup environment
 echo  Q. Quit
 echo.
-choice /C 123456789CQ /N /M "Select an action: "
-if errorlevel 11 goto end
+choice /C 123456789CSQ /N /M "Select an action: "
+if errorlevel 12 goto end
+if errorlevel 11 goto action_setup
 if errorlevel 10 goto action_control
 if errorlevel 9 goto action_install_ls_release
 if errorlevel 8 goto action_health
@@ -126,7 +168,7 @@ goto menu
 :action_probe
 call :probe_ls
 echo.
-call :confirm "Open http://127.0.0.1:%LS_PORT% in browser" DO_OPEN
+call :confirm "Open http://127.0.0.1:%LS_PORT% in browser" DO_OPEN services
 if /I "!DO_OPEN!"=="Y" start "" "http://127.0.0.1:%LS_PORT%"
 call :pause_screen
 goto menu
@@ -151,6 +193,11 @@ call :start_control_panel
 call :pause_screen
 goto menu
 
+:action_setup
+call :setup_env
+call :pause_screen
+goto menu
+
 :end
 echo Bye.
 exit /b 0
@@ -168,6 +215,7 @@ echo Usage:
 echo   AntiQuotar.bat             Open interactive menu
 echo   AntiQuotar.bat check       Check local dependencies
 echo   AntiQuotar.bat sync        Clone/update the three upstream repos
+echo   AntiQuotar.bat setup       Auto setup environment without interactive prompts
 echo   AntiQuotar.bat usage       Open antigravity-usage submenu
 echo   AntiQuotar.bat quota       Run antigravity-usage quota --all
 echo   AntiQuotar.bat cms         Open the local Control CMS panel
@@ -189,10 +237,33 @@ pause
 exit /b 0
 
 :confirm
-set "%~2=N"
+set "MSG=%~1"
+set "VAR=%~2"
+set "TYPE=%~3"
+set "%VAR%=N"
+
+if /I "%TYPE%"=="install" (
+  if /I "%PROMPT_BEFORE_INSTALL%"=="false" (
+    set "%VAR%=Y"
+    exit /b 0
+  )
+)
+if /I "%TYPE%"=="build" (
+  if /I "%PROMPT_BEFORE_BUILD%"=="false" (
+    set "%VAR%=Y"
+    exit /b 0
+  )
+)
+if /I "%TYPE%"=="services" (
+  if /I "%PROMPT_BEFORE_STARTING_SERVICES%"=="false" (
+    set "%VAR%=Y"
+    exit /b 0
+  )
+)
+
 set "_CONFIRM="
-set /p "_CONFIRM=%~1 [y/N]: "
-if /I "%_CONFIRM%"=="Y" set "%~2=Y"
+set /p "_CONFIRM=%MSG% [y/N]: "
+if /I "%_CONFIRM%"=="Y" set "%VAR%=Y"
 exit /b 0
 
 :ensure_dirs
@@ -303,7 +374,7 @@ if errorlevel 1 (
   echo [ERROR] npm was not found. Install Node.js 18+ first.
   exit /b 1
 )
-call :confirm "Install/update antigravity-usage globally with npm" DO_NPM
+call :confirm "Install/update antigravity-usage globally with npm" DO_NPM install
 if /I not "%DO_NPM%"=="Y" (
   echo Skipped.
   exit /b 0
@@ -389,7 +460,7 @@ if errorlevel 1 (
   exit /b 1
 )
 if /I not "%~1"=="no-prompt" (
-  call :confirm "Start Antigravity-Tools-LS from source on port %LS_PORT%" DO_START_LS
+  call :confirm "Start Antigravity-Tools-LS from source on port %LS_PORT%" DO_START_LS services
   if /I not "!DO_START_LS!"=="Y" (
     echo Skipped.
     exit /b 0
@@ -410,7 +481,7 @@ if not exist "%LS_REPO%\install.ps1" (
   echo [ERROR] install.ps1 was not found.
   exit /b 1
 )
-call :confirm "Run Antigravity-Tools-LS install.ps1 release installer" DO_INSTALL_LS
+call :confirm "Run Antigravity-Tools-LS install.ps1 release installer" DO_INSTALL_LS install
 if /I not "%DO_INSTALL_LS%"=="Y" (
   echo Skipped.
   exit /b 0
@@ -429,7 +500,7 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist "%ROOT%\node_modules" (
-  call :confirm "Install Control CMS dependencies with npm install" DO_CONTROL_NPM
+  call :confirm "Install Control CMS dependencies with npm install" DO_CONTROL_NPM install
   if /I not "!DO_CONTROL_NPM!"=="Y" (
     echo Skipped.
     exit /b 0
@@ -482,7 +553,7 @@ if errorlevel 1 (
   echo [ERROR] npm was not found. Install Node.js first.
   exit /b 1
 )
-call :confirm "Build Quota Watcher VSIX (runs npm install/compile/package)" DO_WATCHER
+call :confirm "Build Quota Watcher VSIX (runs npm install/compile/package)" DO_WATCHER build
 if /I not "%DO_WATCHER%"=="Y" (
   echo Skipped.
   exit /b 0
@@ -602,7 +673,7 @@ echo.
 call :probe_ls
 if errorlevel 1 (
   echo.
-  call :confirm "LS is not reachable. Start source server in a new terminal" DO_RESONATE_LS
+  call :confirm "LS is not reachable. Start source server in a new terminal" DO_RESONATE_LS services
   if /I "!DO_RESONATE_LS!"=="Y" (
     call :start_ls_source no-prompt
     echo Waiting for server startup...
@@ -613,6 +684,62 @@ if errorlevel 1 (
 echo.
 call :health_report
 echo.
-call :confirm "Open LS dashboard in browser" DO_RESONATE_OPEN
+call :confirm "Open LS dashboard in browser" DO_RESONATE_OPEN services
 if /I "!DO_RESONATE_OPEN!"=="Y" start "" "http://127.0.0.1:%LS_PORT%"
+exit /b 0
+
+:setup_env
+call :banner
+echo.
+echo Auto Environment Setup...
+echo.
+
+set "PROMPT_BEFORE_INSTALL=false"
+set "PROMPT_BEFORE_BUILD=false"
+set "PROMPT_BEFORE_STARTING_SERVICES=false"
+
+echo [1/5] Checking core dependencies...
+call :check_deps
+echo.
+
+echo [2/5] Syncing upstream repositories...
+call :sync_repos
+if errorlevel 1 (
+  echo [ERROR] Syncing repositories failed.
+  exit /b 1
+)
+echo.
+
+echo [3/5] Installing Control CMS dependencies...
+if not exist "%ROOT%\node_modules" (
+  echo Running npm install at root...
+  pushd "%ROOT%"
+  call npm install
+  popd
+) else (
+  echo Control CMS dependencies already installed.
+)
+echo.
+
+echo [4/5] Checking and installing antigravity-usage CLI...
+where antigravity-usage >nul 2>nul
+if errorlevel 1 (
+  echo antigravity-usage CLI is missing. Installing globally...
+  call npm install -g antigravity-usage@latest
+) else (
+  echo antigravity-usage CLI is already installed.
+)
+echo.
+
+echo [5/5] Building Quota Watcher VSIX...
+if exist "%WATCHER_REPO%\package.json" (
+  echo Building Watcher extension...
+  pushd "%WATCHER_REPO%"
+  call powershell -NoProfile -ExecutionPolicy Bypass -File ".\build.ps1"
+  popd
+) else (
+  echo [WARN] Quota Watcher repo not found. Skipping build.
+)
+echo.
+echo [OK] Auto Environment Setup completed successfully!
 exit /b 0
