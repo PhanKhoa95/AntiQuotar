@@ -25,7 +25,8 @@ Verify build, playwright tests, and smoke test status in the AntiQuotar reposito
 
 ## Key Decisions Made
 - Executed `npm run build` which succeeded clean.
-- Launched `npx playwright test` which runs in the background.
+- Executed `npx playwright test` which completed successfully with all 55 tests passing.
+- Executed `npm run test:smoke` which completed successfully (all smoke tests passed).
 
 ## Artifact Index
 - y:\AntiQuotar\.agents\challenger_swapping_3\verification.md — Verification report
