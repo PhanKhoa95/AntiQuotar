@@ -62,15 +62,17 @@ Complete and finalize the real-time active account switching system between the 
 | Challenger 1 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | completed | 4ce6ea35-d3d8-44e7-be99-802316d2b478 |
 | Challenger 2 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | completed | 0191de33-df72-4b6d-85a5-837e1d1d1cff |
 | Auditor 1 | teamwork_preview_auditor | Forensic integrity audit | completed | 547be8ee-9cf9-4bcd-be88-ef4290e690a2 |
-| Explorer Swapping 1 | teamwork_preview_explorer | Explore swapping & app sync | in-progress | bcdc888b-1d3b-4d6f-99f4-eff171a45906 |
+| Explorer Swapping 1 | teamwork_preview_explorer | Explore swapping & app sync | completed | bcdc888b-1d3b-4d6f-99f4-eff171a45906 |
+| Worker Swapping 1 | teamwork_preview_worker | Implement new E2E test | in-progress | 2e487fef-5e39-427e-bea0-5f9a3b2b725f |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 10 / 16
-- Pending subagents: [bcdc888b-1d3b-4d6f-99f4-eff171a45906]
+- Spawn count: 11 / 16
+- Pending subagents: [2e487fef-5e39-427e-bea0-5f9a3b2b725f]
 
 - Predecessor: none
 - Successor: not yet spawned
+
 
 ## Active Timers
 - Heartbeat cron: task-55
