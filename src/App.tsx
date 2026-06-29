@@ -657,6 +657,11 @@ export default function App() {
       setGatewayOnline(true);
       const json = await response.json();
       
+      if (json && json.activeId && json.activeId !== activeId) {
+        setActiveId(json.activeId);
+        setSelectedId(json.activeId);
+      }
+      
       const items = (Array.isArray(json) ? json : (json.sessions || json.accounts)) as any[];
       if (Array.isArray(items)) {
         setSessions((current) => {
