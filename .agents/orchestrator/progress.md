@@ -1,16 +1,17 @@
-# Progress - AntiQuotar Quota Mismatch and Account Sync Fixes
+# Progress - AntiQuotar Active Account Switch & Synchronization
 
 ## Current Status
-Last visited: 2026-06-29T09:45:00+07:00
+Last visited: 2026-06-29T13:17:48+07:00
 
-- [x] Milestone 1: Decomposition and Planning [Done]
-- [x] Milestone 2: Codebase Exploration and Strategy [Done]
-- [x] Milestone 3: Core Fixes Implementation [Done]
-- [x] Milestone 4: Verification and Integrity Audit [Done]
-- [x] Milestone 5: Handoff and Completion [Done]
+- [x] Milestone 1: Previous Quota Fixes [Done]
+- [ ] Milestone 2: Swapping Exploration [Planned]
+- [ ] Milestone 3: Swapping Core Fixes [Planned]
+- [ ] Milestone 4: Interactive E2E Test [Planned]
+- [ ] Milestone 5: Verification and Integrity Audit [Planned]
 
 ## Iteration Status
 Current iteration: 1 / 32
+
 
 ## Retrospective Notes
 ### What Worked

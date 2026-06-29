@@ -1,14 +1,15 @@
-# BRIEFING — 2026-06-29T09:46:00+07:00
+# BRIEFING — 2026-06-29T13:17:48+07:00
 
 ## Mission
-Fix the quota detail value mismatch in the CMS frontend (where 5-hour limit incorrectly displays weekly limit values) and fix the issue where previously logged-in accounts do not update their quota details correctly.
+Complete and finalize the real-time active account switching system between the Control CMS, the local-bridge server, and the desktop client applications (including the VSCode Extension and the custom IDE Antigravity.exe) by leveraging synchronized Windows Credential Manager updates.
 
 ## 🔒 My Identity
 - Archetype: teamwork_preview_orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: y:\AntiQuotar\.agents\orchestrator
 - Original parent: main agent
-- Original parent conversation ID: 6c71fe85-d81a-43ef-850c-f6d7bf161534
+- Original parent conversation ID: 23ef1eb1-8755-4a8b-ade2-a4e16c084540
+
 
 ## 🔒 My Workflow
 - **Pattern**: Project
@@ -40,8 +41,9 @@ Fix the quota detail value mismatch in the CMS frontend (where 5-hour limit inco
 - Never reuse a subagent after it has delivered its handoff — always spawn fresh
 
 ## Current Parent
-- Conversation ID: 6c71fe85-d81a-43ef-850c-f6d7bf161534
-- Updated: 2026-06-29T09:46:00+07:00
+- Conversation ID: 23ef1eb1-8755-4a8b-ade2-a4e16c084540
+- Updated: 2026-06-29T13:17:48+07:00
+
 
 ## Key Decisions Made
 - Confirmed that `antigravity agents quota` is not in the system path.
@@ -60,17 +62,20 @@ Fix the quota detail value mismatch in the CMS frontend (where 5-hour limit inco
 | Challenger 1 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | completed | 4ce6ea35-d3d8-44e7-be99-802316d2b478 |
 | Challenger 2 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | completed | 0191de33-df72-4b6d-85a5-837e1d1d1cff |
 | Auditor 1 | teamwork_preview_auditor | Forensic integrity audit | completed | 547be8ee-9cf9-4bcd-be88-ef4290e690a2 |
+| Explorer Swapping 1 | teamwork_preview_explorer | Explore swapping & app sync | in-progress | bcdc888b-1d3b-4d6f-99f4-eff171a45906 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 9 / 16
-- Pending subagents: none
+- Spawn count: 10 / 16
+- Pending subagents: [bcdc888b-1d3b-4d6f-99f4-eff171a45906]
+
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: none
+- Heartbeat cron: task-55
 - Safety timer: none
+
 - On succession: kill all timers before spawning successor
 - On context truncation: run manage_task(Action="list") — re-create if missing
 
