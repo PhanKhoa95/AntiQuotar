@@ -53,12 +53,17 @@ Fix the quota detail value mismatch in the CMS frontend (where 5-hour limit inco
 | Explorer 1 | teamwork_preview_explorer | Codebase exploration & strategy | completed | 13b7d713-be4b-47b8-a212-dc850a388bb7 |
 | Explorer 2 | teamwork_preview_explorer | Codebase exploration & strategy | completed | 0549a516-c002-41e6-a42a-2005a3374a7a |
 | Explorer 3 | teamwork_preview_explorer | Codebase exploration & strategy | completed | b66d44d6-a937-4ac1-9c44-d120c6a1ac7e |
-| Worker 1 | teamwork_preview_worker | Implement fixes & verify | in-progress | 4572c65d-85f0-44e1-b124-f2c729acaeb2 |
+| Worker 1 | teamwork_preview_worker | Implement fixes & verify | completed | 4572c65d-85f0-44e1-b124-f2c729acaeb2 |
+| Reviewer 1 | teamwork_preview_reviewer | Code correctness review | in-progress | 6ae5a84a-8a26-4bed-9351-37c26688c232 |
+| Reviewer 2 | teamwork_preview_reviewer | Code correctness review | in-progress | d2e9d5d3-875a-4171-a986-497a8a946b7e |
+| Challenger 1 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | in-progress | 4ce6ea35-d3d8-44e7-be99-802316d2b478 |
+| Challenger 2 | teamwork_preview_challenger | Run unit, smoke, and Playwright tests | in-progress | 0191de33-df72-4b6d-85a5-837e1d1d1cff |
+| Auditor 1 | teamwork_preview_auditor | Forensic integrity audit | in-progress | 547be8ee-9cf9-4bcd-be88-ef4290e690a2 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 4 / 16
-- Pending subagents: 4572c65d-85f0-44e1-b124-f2c729acaeb2
+- Spawn count: 9 / 16
+- Pending subagents: 6ae5a84a-8a26-4bed-9351-37c26688c232, d2e9d5d3-875a-4171-a986-497a8a946b7e, 4ce6ea35-d3d8-44e7-be99-802316d2b478, 0191de33-df72-4b6d-85a5-837e1d1d1cff, 547be8ee-9cf9-4bcd-be88-ef4290e690a2
 - Predecessor: none
 - Successor: not yet spawned
 
