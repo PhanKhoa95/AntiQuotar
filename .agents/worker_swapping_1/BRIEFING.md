@@ -1,4 +1,4 @@
-# BRIEFING — 2026-06-29T13:25:00+07:00
+# BRIEFING — 2026-06-29T13:38:00+07:00
 
 ## Mission
 Implement and verify a new interactive E2E browser test scenario in `tests/antiquotar.spec.ts` for active account promotion, credentials sync, and login prompt suppression.
@@ -26,21 +26,21 @@ Implement and verify a new interactive E2E browser test scenario in `tests/antiq
 - **Code layout**: E2E playwright tests in `tests/` directory.
 
 ## Key Decisions Made
-- Setup BRIEFING.md and progress.md first.
+- Used ESM-compatible `__dirname` and `__filename` resolution via `url.fileURLToPath` at the top of the E2E test file to avoid `ReferenceError`.
 
 ## Artifact Index
 - `y:\AntiQuotar\.agents\worker_swapping_1\ORIGINAL_REQUEST.md` — Holds user request details.
 - `y:\AntiQuotar\.agents\worker_swapping_1\progress.md` — Progress tracker.
 
 ## Change Tracker
-- **Files modified**: None yet.
-- **Build status**: TBD
+- **Files modified**: `tests/antiquotar.spec.ts` (added imports and Scenario 7 test case 51)
+- **Build status**: Pass (npm run build)
 - **Pending issues**: None.
 
 ## Quality Status
-- **Build/test result**: TBD
-- **Lint status**: TBD
-- **Tests added/modified**: None yet.
+- **Build/test result**: Pass (all 55 tests passed in Playwright, and smoke tests passed)
+- **Lint status**: Pass
+- **Tests added/modified**: Test 51 (Scenario 7 E2E interactive promotion sync test)
 
 ## Loaded Skills
 - None.
