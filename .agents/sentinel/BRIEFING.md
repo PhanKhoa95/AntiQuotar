@@ -15,7 +15,7 @@ Monitor orchestrator and auditor, report progress, and ensure victory audit pass
 - No direct human I/O (use send_message to main agent)
 
 ## User Context
-- **Last user request**: Fix quota detail value mismatch and ensure stable account updates.
+- **Last user request**: Fix quota detail value mismatch, ensure stable account updates. Follow-up: investigate and incorporate 'antigravity agents quota --format json' CLI command.
 - **Pending clarifications**: [none]
 - **Delivered results**: [none]
 

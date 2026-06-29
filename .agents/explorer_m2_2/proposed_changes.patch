@@ -1,0 +1,252 @@
+diff --git a/tools/local-bridge.cjs b/tools/local-bridge.cjs
+index e46b2b7..8c0d12e 100644
+--- a/tools/local-bridge.cjs
++++ b/tools/local-bridge.cjs
+@@ -52,9 +52,10 @@ const server = http.createServer((req, res) => {
+     exec(cmdAll, { env: { ...process.env, PATH: envPath } }, (error, stdoutAll, stderrAll) => {
+-      if (error) {
++      const hasJson = stdoutAll && stdoutAll.indexOf('[') !== -1;
++      if (error && !hasJson) {
+         console.error('Error running quota CLI:', error);
+-        res.writeHead(500, { 'Content-Type': 'application/json' });
+-        res.end(JSON.stringify({ error: 'Failed to run quota command', details: stderrAll }));
++        res.writeHead(200, { 'Content-Type': 'application/json' });
++        res.end(JSON.stringify({ sessions: [] }));
+         return;
+       }
+ 
+@@ -289,25 +290,27 @@ const server = http.createServer((req, res) => {
+             // Fallback for missing limits within the same model category
+-            if (geminiWeekly.percentage === 100 && geminiFiveHour.percentage < 100) {
+-              geminiWeekly = {
+-                percentage: geminiFiveHour.percentage,
+-                resetText: 'You have used some of your weekly limit, it will fully refresh in weekly cycle.'
+-              };
+-            }
+-            if (geminiFiveHour.percentage === 100 && geminiWeekly.percentage < 100) {
+-              geminiFiveHour = {
+-                percentage: geminiWeekly.percentage,
+-                resetText: 'You have used some of your 5-hour limit, it will fully refresh in 5 hours.'
+-              };
+-            }
+-            if (claudeWeekly.percentage === 100 && claudeFiveHour.percentage < 100) {
+-              claudeWeekly = {
+-                percentage: claudeFiveHour.percentage,
+-                resetText: 'You have used some of your weekly limit, it will fully refresh in weekly cycle.'
+-              };
+-            }
+-            if (claudeFiveHour.percentage === 100 && claudeWeekly.percentage < 100) {
+-              claudeFiveHour = {
+-                percentage: claudeWeekly.percentage,
+-                resetText: 'You have used some of your 5-hour limit, it will fully refresh in 5 hours.'
+-              };
+-            }
++            if (!hasExactGroups) {
++              if (geminiWeekly.percentage === 100 && geminiFiveHour.percentage < 100) {
++                geminiWeekly = {
++                  percentage: geminiFiveHour.percentage,
++                  resetText: 'You have used some of your weekly limit, it will fully refresh in weekly cycle.'
++                };
++              }
++              if (geminiFiveHour.percentage === 100 && geminiWeekly.percentage < 100) {
++                geminiFiveHour = {
++                  percentage: geminiWeekly.percentage,
++                  resetText: 'You have used some of your 5-hour limit, it will fully refresh in 5 hours.'
++                };
++              }
++              if (claudeWeekly.percentage === 100 && claudeFiveHour.percentage < 100) {
++                claudeWeekly = {
++                  percentage: claudeFiveHour.percentage,
++                  resetText: 'You have used some of your weekly limit, it will fully refresh in weekly cycle.'
++                };
++              }
++              if (claudeFiveHour.percentage === 100 && claudeWeekly.percentage < 100) {
++                claudeFiveHour = {
++                  percentage: claudeWeekly.percentage,
++                  resetText: 'You have used some of your 5-hour limit, it will fully refresh in 5 hours.'
++                };
++              }
++            }
+ 
+@@ -346,4 +349,4 @@ const server = http.createServer((req, res) => {
+         } catch (e) {
+           console.error('Failed to parse CLI output:', e);
+-          res.writeHead(500, { 'Content-Type': 'application/json' });
+-          res.end(JSON.stringify({ error: 'Failed to parse JSON output', stdout: stdoutAll }));
++          res.writeHead(200, { 'Content-Type': 'application/json' });
++          res.end(JSON.stringify({ sessions: [] }));
+         }
+diff --git a/src/App.tsx b/src/App.tsx
+index 8f6d7bf..1615340 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -820,81 +820,83 @@
+       } else if (json && typeof json === 'object') {
+-        const active = sessions.find((session) => session.id === activeId) ?? sessions[0] ?? null;
+-        if (active) {
+-          let isMatch = true;
+-          if (json.id !== undefined && String(json.id) !== active.id) isMatch = false;
+-          if (json.label !== undefined && typeof json.label === 'string' && json.label.toLowerCase() !== active.label.toLowerCase()) isMatch = false;
+-          if (json.email !== undefined && typeof json.email === 'string' && json.email.toLowerCase() === active.label.toLowerCase()) isMatch = true; // email match takes priority
+-          if (json.domain !== undefined && typeof json.domain === 'string' && json.domain.toLowerCase() !== active.domain.toLowerCase()) isMatch = false;
+-
+-          if (isMatch) {
+-            let quotaUsed = active.quotaUsed;
+-            let quotaLimit = active.quotaLimit;
+-
+-            if (json.quotaUsed !== undefined) {
+-              quotaUsed = Number(json.quotaUsed);
+-            } else if (json.used !== undefined) {
+-              quotaUsed = Number(json.used);
+-            } else if (json.quota_used !== undefined) {
+-              quotaUsed = Number(json.quota_used);
+-            }
+-
+-            if (json.quotaLimit !== undefined) {
+-              quotaLimit = Number(json.quotaLimit);
+-            } else if (json.limit !== undefined) {
+-              quotaLimit = Number(json.limit);
+-            } else if (json.quota_limit !== undefined) {
+-              quotaLimit = Number(json.quota_limit);
+-            } else if (json.quota !== undefined && typeof json.quota !== 'object') {
+-              quotaLimit = Number(json.quota);
+-            }
+-
+-            if (json.quota && typeof json.quota === 'object') {
+-              const q = json.quota;
+-              if (q.used !== undefined) {
+-                quotaUsed = Number(q.used);
+-              }
+-              if (q.limit !== undefined) {
+-                quotaLimit = Number(q.limit);
+-              }
+-              if (Array.isArray(q.models) && q.models.length > 0) {
+-                const minRemainingPct = q.models.reduce((min: number, m: any) => {
+-                  const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
+-                  return pct < min ? pct : min;
+-                }, 100);
+-                quotaLimit = 100;
+-                quotaUsed = Math.max(0, 100 - minRemainingPct);
+-              }
+-            } else if (json.quota_percentage !== undefined) {
+-              const remainingPct = Number(json.quota_percentage);
+-              quotaLimit = 100;
+-              quotaUsed = Math.max(0, 100 - remainingPct);
+-            }
+-
+-            let cooldownUntil = active.cooldownUntil;
+-            if (json.cooldownUntil !== undefined) {
+-              cooldownUntil = json.cooldownUntil;
+-            } else if (json.cooldown_until !== undefined) {
+-              cooldownUntil = json.cooldown_until;
+-            }
+-
+-            let quotaGroups = active.quotaGroups;
+-            if (json.quotaGroups !== undefined) {
+-              quotaGroups = json.quotaGroups;
+-            }
+-
+-            setSessions((current) =>
+-              current.map((session) => {
+-                if (session.id === active.id) {
+-                  return normalizeSession({
+-                    ...session,
+-                    quotaUsed,
+-                    quotaLimit,
+-                    cooldownUntil,
+-                    quotaGroups,
+-                    lastChecked: checkedAt
+-                  }, settings);
+-                }
+-                return session;
+-              })
+-            );
+-            addLog(`Synchronized active session ${active.label} quota from LS Gateway.`, "success");
+-          }
+-        }
++        setSessions((current) => {
++          let updatedAny = false;
++          const nextSessions = current.map((session) => {
++            let isMatch = false;
++            if (json.id !== undefined && String(json.id) === session.id) isMatch = true;
++            else if (json.label !== undefined && typeof json.label === 'string' && json.label.toLowerCase() === session.label.toLowerCase()) isMatch = true;
++            else if (json.email !== undefined && typeof json.email === 'string' && json.email.toLowerCase() === session.label.toLowerCase()) isMatch = true;
++            else {
++              const isPersonal = session.label.includes('@') || session.label.toLowerCase().includes('google') || session.label.toLowerCase().includes('claude');
++              if (!isPersonal && json.domain !== undefined && typeof json.domain === 'string' && json.domain.toLowerCase() === session.domain.toLowerCase()) isMatch = true;
++            }
++
++            if (isMatch) {
++              updatedAny = true;
++              let quotaUsed = session.quotaUsed;
++              let quotaLimit = session.quotaLimit;
++
++              if (json.quotaUsed !== undefined) {
++                quotaUsed = Number(json.quotaUsed);
++              } else if (json.used !== undefined) {
++                quotaUsed = Number(json.used);
++              } else if (json.quota_used !== undefined) {
++                quotaUsed = Number(json.quota_used);
++              }
++
++              if (json.quotaLimit !== undefined) {
++                quotaLimit = Number(json.quotaLimit);
++              } else if (json.limit !== undefined) {
++                quotaLimit = Number(json.limit);
++              } else if (json.quota_limit !== undefined) {
++                quotaLimit = Number(json.quota_limit);
++              } else if (json.quota !== undefined && typeof json.quota !== 'object') {
++                quotaLimit = Number(json.quota);
++              }
++
++              if (json.quota && typeof json.quota === 'object') {
++                const q = json.quota;
++                if (q.used !== undefined) {
++                  quotaUsed = Number(q.used);
++                }
++                if (q.limit !== undefined) {
++                  quotaLimit = Number(q.limit);
++                }
++                if (Array.isArray(q.models) && q.models.length > 0) {
++                  const minRemainingPct = q.models.reduce((min: number, m: any) => {
++                    const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
++                    return pct < min ? pct : min;
++                  }, 100);
++                  quotaLimit = 100;
++                  quotaUsed = Math.max(0, 100 - minRemainingPct);
++                }
++              } else if (json.quota_percentage !== undefined) {
++                const remainingPct = Number(json.quota_percentage);
++                quotaLimit = 100;
++                quotaUsed = Math.max(0, 100 - remainingPct);
++              }
++
++              let cooldownUntil = session.cooldownUntil;
++              if (json.cooldownUntil !== undefined) {
++                cooldownUntil = json.cooldownUntil;
++              } else if (json.cooldown_until !== undefined) {
++                cooldownUntil = json.cooldown_until;
++              }
++
++              let quotaGroups = session.quotaGroups;
++              if (json.quotaGroups !== undefined) {
++                quotaGroups = json.quotaGroups;
++              }
++
++              return normalizeSession({
++                ...session,
++                quotaUsed,
++                quotaLimit,
++                cooldownUntil,
++                quotaGroups,
++                lastChecked: checkedAt
++              }, settings);
++            }
++            return session;
++          });
++
++          if (updatedAny) {
++            addLog(`Synchronized matching session(s) quota from LS Gateway.`, "success");
++          }
++          return nextSessions;
++        });

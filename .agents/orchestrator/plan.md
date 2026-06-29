@@ -10,12 +10,14 @@
   - Examine the local bridge CLI call (`quota --all --json --refresh`) execution and error handling.
   - Inspect `src/App.tsx` state updates for account syncing (Run Check).
   - Review existing Playwright tests.
+  - Investigate if `antigravity agents quota --format json` is available on the system PATH.
 - Produce a strategy to fix both issues without breaking existing functionality.
 
 ## Milestone 3: Core Fixes Implementation
 - Spawn Worker to implement the planned changes:
   - Wrap fallback logic in `local-bridge.cjs` so it only executes when `!hasExactGroups`.
   - Update `local-bridge.cjs` CLI integration to handle individual account refresh failures gracefully without 500 errors.
+  - Integrate `antigravity agents quota --format json` command if available on the system PATH to ensure accurate quota values.
   - Modify `src/App.tsx` React state handling to ensure all matched sessions update their quota details correctly on receipt of the accounts list.
 - Run local lint, build, and tests to verify.
 

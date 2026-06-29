@@ -29,3 +29,11 @@ Integrity mode: development
 - [ ] Previously logged-in accounts successfully sync and update their last checked timestamp and quota values upon clicking "Run Check".
 - [ ] Running the smoke tests `npm run test:smoke` succeeds.
 - [ ] Running the Playwright test suite `npx playwright test` succeeds with all 54 tests passing.
+
+## Follow-up — 2026-06-29T02:38:23Z
+
+User has suggested using the following CLI command to fetch raw JSON quota data:
+`antigravity agents quota --format json`
+
+Please investigate if this command is available on the system PATH and consider incorporating it into the quota sync mechanism (e.g. in the CLI or local-bridge) to ensure accurate quota values.
+
