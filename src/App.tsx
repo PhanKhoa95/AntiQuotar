@@ -357,6 +357,9 @@ export default function App() {
           .then((res) => {
             if (!res.ok) {
               console.error("LS Gateway switch returned error status:", res.status);
+            } else {
+              console.log("LS Gateway switch success. Triggering active quota refresh.");
+              runCheckRef.current('active');
             }
           })
           .catch((err) => {
@@ -585,7 +588,7 @@ export default function App() {
     }
   };
 
-  const runCheck = async (forceRefresh: boolean = false) => {
+  const runCheck = async (forceRefresh: boolean | 'active' = false) => {
     const checkedAt = nowIso();
     let rotatedTo: CookieSession | null = null;
 
@@ -640,8 +643,10 @@ export default function App() {
 
     try {
       const headers: HeadersInit = {};
-      if (forceRefresh) {
+      if (forceRefresh === true) {
         headers['x-refresh'] = 'true';
+      } else if (forceRefresh === 'active') {
+        headers['x-refresh'] = 'active';
       }
       const response = await fetch(settings.lsEndpoint, { method: "GET", headers });
       if (!response.ok) {
