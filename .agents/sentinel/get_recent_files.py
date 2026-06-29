@@ -1,6 +1,6 @@
 import os
 
-workspace = r"c:\Users\KHOA MEDIA\Documents\AntiQuotar"
+workspace = r"E:\AntiQuotar"
 exclude_dirs = {".git", ".agents", "node_modules", "dist"}
 
 files = []

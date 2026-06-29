@@ -33,3 +33,12 @@ Integrity mode: development
 - [ ] Toàn bộ mã nguồn kiểm thử Playwright được lưu trữ trong thư mục `tests/` hoặc thư mục cấu hình tiêu chuẩn.
 - [ ] Chạy lệnh chạy thử nghiệm `npx playwright test` thành công và tất cả các test case đều ĐẠT (Passed).
 - [ ] Build dự án thành công (`npm run build`) mà không gặp bất kỳ lỗi TypeScript hay lỗi biên dịch nào.
+
+## Follow-up — 2026-06-28T13:27:59+07:00
+
+Implement a verification suite to test Google Account authentication storage and automatic rotation of Antigravity accounts based on quota thresholds in the AntiQuotar CMS.
+Specifically:
+- Implement an automated Playwright test case named `20c. Add Google Account auto-imports new account from LS Gateway on Done click and rotates if quota is high` inside `tests/antiquotar.spec.ts`.
+- The test must mock `/v1/accounts` to return an updated active session S1 (used: 85) and a new session S2 (used: 10).
+- The test must verify S2 is imported, S1 goes to cooldown, and S2 becomes the active session.
+- Running the Playwright test suite for this case must pass successfully.

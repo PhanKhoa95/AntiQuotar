@@ -38,6 +38,8 @@ async function setSliderValue(page, selector, value) {
 
 // Helper to clean up localStorage and state
 test.beforeEach(async ({ page }) => {
+  page.on('console', msg => console.log('BROWSER:', msg.text()));
+  page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
   // Block auto-sync requests to local bridge so real data doesn't pollute tests
   await page.route('**/v1/**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
@@ -420,6 +422,162 @@ test.describe('Tier 1: Feature Coverage', () => {
     await expect(async () => {
       const logs = await page.locator('.log-list .log-item p').allTextContents();
       expect(logs.some(l => l.includes('Synchronized 2 session(s) from LS Gateway.'))).toBeTruthy();
+    }).toPass();
+  });
+
+  test('20a. Add Antigravity triggers login flow successfully', async ({ page }) => {
+    await page.unroute('**/v1/**');
+    await page.route('**/v1/auth/login', async (route) => {
+      await route.fulfill({ status: 200 });
+    });
+    await page.route('**/v1/accounts', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    });
+
+    await page.click('button:has-text("Add Antigravity")');
+
+    const logs = await page.locator('.log-list .log-item p').allTextContents();
+    expect(logs.some(l => l.includes('Initiating Google Login flow via Antigravity LS Gateway...'))).toBeTruthy();
+    expect(logs.some(l => l.includes('Authentication browser window requested. Please log in on the opened tab.'))).toBeTruthy();
+
+    await expect(page.locator('.modal-header h2')).toContainText('Add Google Account');
+
+    await page.click('.modal-footer button:has-text("Done")');
+    await expect(page.locator('.modal-header h2')).toHaveCount(0);
+  });
+
+  test('20b. Add Antigravity handles login flow failure gracefully', async ({ page }) => {
+    await page.unroute('**/v1/**');
+    await page.route('**/v1/auth/login', async (route) => {
+      await route.fulfill({ status: 500 });
+    });
+
+    await page.click('button:has-text("Add Antigravity")');
+
+    const logs = await page.locator('.log-list .log-item p').allTextContents();
+    expect(logs.some(l => l.includes('Initiating Google Login flow via Antigravity LS Gateway...'))).toBeTruthy();
+    expect(logs.some(l => l.includes('Failed to initiate login flow from LS Gateway.'))).toBeTruthy();
+
+    await expect(page.locator('.modal-header h2')).toContainText('Add Google Account');
+  });
+
+  test('20c. Add Google Account auto-imports new account from LS Gateway on Done click and rotates if quota is high', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    await addSession(page, { inbox: 's=1', domain: 'google.com', label: 'S1', format: 'header', used: 10, limit: 100 });
+    
+    await page.check('#settings-auto-rotate-input');
+    await setSliderValue(page, '#settings-rotate-threshold-input', '80');
+
+    await page.unroute('**/v1/**');
+    await page.route('**/v1/auth/login', async (route) => {
+      await route.fulfill({ status: 200 });
+    });
+    await page.route('**/v1/accounts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessions: [
+            { id: 's1', label: 'S1', domain: 'google.com', quotaUsed: 85, quotaLimit: 100 },
+            { id: 's2', label: 'S2', domain: 'google.com', quotaUsed: 10, quotaLimit: 100 }
+          ]
+        })
+      });
+    });
+
+    await page.click('button:has-text("Add Antigravity")');
+    await page.click('.modal-footer button:has-text("Done")');
+
+    const s2Row = page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 'S2' });
+    await expect(s2Row).toContainText('google.com');
+
+    await expect(page.locator('#sessions .panel-heading p')).toHaveText('S2');
+
+    const s1Status = page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 'S1' }).locator('.status');
+    await expect(s1Status).toHaveText('Cooldown');
+
+    await expect(async () => {
+      const logs = await page.locator('.log-list .log-item p').allTextContents();
+      expect(logs.some(l => l.includes('Synchronized 1 session(s) from LS Gateway.'))).toBeTruthy();
+      expect(logs.some(l => l.includes('Automatically imported 1 new session(s) from LS Gateway.'))).toBeTruthy();
+      expect(logs.some(l => l.includes('Auto-rotated active session from S1 to S2'))).toBeTruthy();
+    }).toPass();
+  });
+
+  test('20d. Quota model-specific groups sync with local gateway and active account switch is POSTed', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    let switchPayloads: any[] = [];
+    await page.unroute('**/v1/**');
+    await page.route('**/v1/accounts/active', async (route) => {
+      switchPayloads.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' });
+    });
+
+    await page.route('**/v1/accounts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessions: [
+            {
+              id: 's1@gmail.com',
+              label: 's1@gmail.com',
+              domain: 'google.com',
+              quotaUsed: 10,
+              quotaLimit: 100,
+              quotaGroups: [
+                {
+                  name: 'Gemini Models',
+                  weekly: { percentage: 86, resetText: 'Weekly Limit 86%' },
+                  fiveHour: { percentage: 19, resetText: 'Five Hour Limit 19%' }
+                },
+                {
+                  name: 'Claude and GPT models',
+                  weekly: { percentage: 29, resetText: 'Weekly Limit 29%' },
+                  fiveHour: { percentage: 100, resetText: '' }
+                }
+              ]
+            },
+            {
+              id: 's2@gmail.com',
+              label: 's2@gmail.com',
+              domain: 'google.com',
+              quotaUsed: 20,
+              quotaLimit: 100,
+              quotaGroups: null
+            }
+          ]
+        })
+      });
+    });
+
+    // Sync S1 and S2
+    await page.click('button:has-text("Add Antigravity")');
+    await page.click('.modal-footer button:has-text("Done")');
+
+    // Click S1 row in session table to select it and show its details
+    await page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 's1@gmail.com' }).click();
+
+    // Verify detailed progress rings are rendered correctly
+    await expect(page.locator('.quota-groups-list')).toBeVisible();
+    await expect(page.locator('.quota-groups-list')).toContainText('Gemini Models');
+    await expect(page.locator('.quota-groups-list')).toContainText('86%');
+    await expect(page.locator('.quota-groups-list')).toContainText('19%');
+    await expect(page.locator('.quota-groups-list')).toContainText('Claude and GPT models');
+    await expect(page.locator('.quota-groups-list')).toContainText('29%');
+    await expect(page.locator('.quota-groups-list')).toContainText('100%');
+
+    // Trigger active session switch by clicking "Rotate Now"
+    await page.click('button:has-text("Rotate Now")');
+    await page.click('button:has-text("Rotate Now")');
+
+    // Wait and assert that the POST switch payload was sent for s2@gmail.com
+    await expect(async () => {
+      expect(switchPayloads.some(p => p && p.email === 's2@gmail.com')).toBeTruthy();
     }).toPass();
   });
 
@@ -962,6 +1120,59 @@ test.describe('Tier 4: Real-World Scenarios', () => {
     expect(queueItems[0]).toBe('S3');
     expect(queueItems[1]).toBe('S2');
     expect(queueItems[2]).toBe('S1');
+  });
+
+  test('50. Scenario 6 (Cross-group limit fallback propagates missing rate limit usage correctly)', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    await page.unroute('**/v1/**');
+    await page.route('**/v1/accounts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessions: [
+            {
+              id: 'fallback@gmail.com',
+              label: 'fallback@gmail.com',
+              domain: 'google.com',
+              quotaUsed: 10,
+              quotaLimit: 100,
+              quotaGroups: [
+                {
+                  name: 'Gemini Models',
+                  weekly: { percentage: 100, resetText: '' },
+                  fiveHour: { percentage: 89, resetText: 'Five Hour Limit 89%' }
+                },
+                {
+                  name: 'Claude and GPT models',
+                  weekly: { percentage: 8, resetText: 'Weekly Limit 8%' },
+                  fiveHour: { percentage: 100, resetText: '' }
+                }
+              ]
+            }
+          ]
+        })
+      });
+    });
+
+    // Import session via Add Google Account
+    await page.click('button:has-text("Add Antigravity")');
+    await page.click('.modal-footer button:has-text("Done")');
+
+    // Select session to show details
+    await page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 'fallback@gmail.com' }).click();
+
+    // Verify fallback values are calculated and rendered
+    await expect(page.locator('.quota-groups-list')).toBeVisible();
+    await expect(page.locator('.quota-groups-list')).toContainText('Gemini Models');
+    
+    // Gemini Weekly should fallback to 89% (from 5-hour) since it was 100%
+    // Claude 5-hour should fallback to 8% (from Weekly) since it was 100%
+    await expect(page.locator('.quota-groups-list')).toContainText('89%');
+    await expect(page.locator('.quota-groups-list')).toContainText('Claude and GPT models');
+    await expect(page.locator('.quota-groups-list')).toContainText('8%');
   });
 
 });

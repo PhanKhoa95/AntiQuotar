@@ -1,20 +1,16 @@
-# Plan - AntiQuotar Core Features & Playwright Tests
+# Plan - AntiQuotar Google Account Auth & Rotation Verification
 
-This plan details the implementation and verification of core features and automated tests.
+This plan details the verification and implementation of the Playwright E2E test suite for Google Account auto-import and rotation on quota threshold.
 
-## Milestone 1: Core Feature Refinements (R1)
-1. **Auto-Rotation Reactivity**: Implement a reactive auto-rotation mechanism in `src/App.tsx` using a React `useEffect` hook, ensuring that when the active session exceeds the configured quota threshold, it auto-rotates to a healthy/watch session with the lowest quota usage.
-2. **LS Gateway Integration**: Update the "Run Check" function in `src/App.tsx` to fetch the LS Gateway endpoint, parse the response, and synchronize the active session or matching sessions' quota data.
-3. **Cooldown & Queue Order**: Keep the cooldown status updated dynamically (using an interval timer to refresh remaining minutes) and ensure the queue sorting logic matches the priority (Healthy/Ready first, Cooldown last).
+## Milestone 1: Assess and Verify Test '20c'
+1. **Analyze existing tests**: Check `tests/antiquotar.spec.ts` for the test `20c. Add Google Account auto-imports new account from LS Gateway on Done click and rotates if quota is high`.
+2. **Identify issues**: Check if the test is robust (e.g. if `/v1/auth/login` needs to be mocked to prevent real network requests, or if any selectors need adjusting).
+3. **Decompose implementation**: If modifications are required, specify what changes need to be made to the test or the App frontend.
 
-## Milestone 2: Playwright E2E Tests Setup & Scenarios (R2)
-1. **Playwright Installation & Config**: Initialize Playwright in the project, create `playwright.config.ts`, and place E2E tests in a new `tests/` directory.
-2. **Cookie Inbox Formats**: Write tests verifying session addition via Cookie Inbox with Header string, Netscape, and JSON formats.
-3. **Manual & Auto-Rotation**: Write tests verifying manual rotation (Rotate Now) and auto-rotation (Run Check / auto trigger).
-4. **Queue Ordering**: Write tests verifying correct queue prioritization.
-5. **Accessibility / HTML Validation**: Write tests ensuring no duplicate HTML IDs or unlinked labels.
+## Milestone 2: Dispatch implementation and verification
+1. **Spawn Worker**: Dispatch a Worker subagent to refine `tests/antiquotar.spec.ts` or make sure the test case matches the specifications, then run the tests to verify.
+2. **Verify build and test results**: Ensure the worker compiles the project (`npm run build`) and runs Playwright tests (`npx playwright test`) successfully.
 
-## Milestone 3: Build & Verification
-1. Run `npm run build` to verify there are no TypeScript or compilation errors.
-2. Run `npx playwright test` to verify all tests pass.
-3. Perform Forensic Audit to check code integrity.
+## Milestone 3: Integrity Audit & Review
+1. **Spawn Forensic Auditor**: Dispatch the Auditor subagent to perform code integrity and anti-cheating checks.
+2. **Synthesize results**: Review the outputs of Worker, Reviewer, and Auditor. If clean, proceed to completion.

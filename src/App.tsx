@@ -57,6 +57,8 @@ interface CookieSession {
   lastChecked: string;
   status: SessionStatus;
   notes: string;
+  quota?: any;
+  quotaGroups?: any;
 }
 
 interface AppSettings {
@@ -87,10 +89,10 @@ const STORAGE_KEY = "antiquotar-control-state-v1";
 const defaultSettings: AppSettings = {
   autoRotate: true,
   rotateThreshold: 80,
-  cooldownMinutes: 8,
+  cooldownMinutes: 300, // 5 hours default cooldown
   lsEndpoint: "http://127.0.0.1:5188/v1/accounts",
   storeRawCookie: true,
-  syncIntervalMinutes: 5
+  syncIntervalMinutes: 1 // 1 minute default sync interval
 };
 
 const nowIso = () => new Date().toISOString();
@@ -121,10 +123,14 @@ const readPersistedState = (): PersistedState => {
 
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     const sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+    const settings = { ...defaultSettings, ...(parsed.settings ?? {}) };
+    if (parsed.settings && parsed.settings.syncIntervalMinutes === 300) {
+      settings.syncIntervalMinutes = 1;
+    }
     return {
       sessions,
       activeId: parsed.activeId ?? sessions[0]?.id ?? null,
-      settings: { ...defaultSettings, ...(parsed.settings ?? {}) },
+      settings,
       logs: Array.isArray(parsed.logs) && parsed.logs.length > 0 ? parsed.logs : initialLogs()
     };
   } catch {
@@ -316,6 +322,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
+
+
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
@@ -332,6 +340,34 @@ export default function App() {
     setSessions((current) => current.map((session) => normalizeSession(session, settings)));
   }, [settings.rotateThreshold]);
 
+  useEffect(() => {
+    setSelectedId(null);
+  }, [activeId]);
+
+  useEffect(() => {
+    if (activeId && settings.lsEndpoint.trim()) {
+      try {
+        const url = new URL(settings.lsEndpoint);
+        const switchUrl = `${url.protocol}//${url.host}/v1/accounts/active`;
+        fetch(switchUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: activeId })
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("LS Gateway switch returned error status:", res.status);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to sync active session to LS Gateway:", err);
+          });
+      } catch (e) {
+        console.error("Invalid lsEndpoint:", e);
+      }
+    }
+  }, [activeId, settings.lsEndpoint]);
+
   const addLog = (message: string, tone: LogTone = "info") => {
     setLogs((current) => [{ id: uid(), time: nowIso(), tone, message }, ...current].slice(0, 80));
   };
@@ -345,6 +381,8 @@ export default function App() {
     () => normalizedSessions.find((session) => session.id === activeId) ?? normalizedSessions[0] ?? null,
     [activeId, normalizedSessions]
   );
+
+
 
   const filteredSessions = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -408,7 +446,10 @@ export default function App() {
 
     const pct = usagePercent(activeSession);
     const isCooldown = activeSession.status === "cooldown";
-    const triggersRotation = isCooldown || (settings.rotateThreshold < 100 && pct >= settings.rotateThreshold);
+    const triggersRotation = isCooldown || (
+      settings.rotateThreshold < 100 &&
+      (settings.rotateThreshold === 0 ? pct > 0 : pct >= settings.rotateThreshold)
+    );
 
     if (triggersRotation) {
       const next = chooseBestCandidate(normalizedSessions, activeSession.id);
@@ -512,8 +553,10 @@ export default function App() {
     );
 
     setSessions((current) => [session, ...current]);
-    setActiveId((current) => current ?? session.id);
-    setSelectedId(session.id);
+    if (!activeId) {
+      setActiveId(session.id);
+      setSelectedId(session.id);
+    }
     setCookieInput("");
     setLabel("");
     setDomain("");
@@ -559,7 +602,10 @@ export default function App() {
       const active = normalized.find((session) => session.id === activeId) ?? null;
       const pct = active ? usagePercent(active) : 0;
       const isCooldown = active ? active.status === "cooldown" : false;
-      const triggersRotation = isCooldown || (settings.rotateThreshold < 100 && pct >= settings.rotateThreshold);
+      const triggersRotation = isCooldown || (
+        settings.rotateThreshold < 100 &&
+        (settings.rotateThreshold === 0 ? pct > 0 : pct >= settings.rotateThreshold)
+      );
       const next =
         settings.autoRotate && triggersRotation
           ? chooseBestCandidate(normalized, activeId)
@@ -615,7 +661,9 @@ export default function App() {
               if (item.id !== undefined && String(item.id) === session.id) return true;
               if (item.label !== undefined && typeof item.label === 'string' && item.label.toLowerCase() === session.label.toLowerCase()) return true;
               if (item.email !== undefined && typeof item.email === 'string' && item.email.toLowerCase() === session.label.toLowerCase()) return true;
-              if (item.domain !== undefined && typeof item.domain === 'string' && item.domain.toLowerCase() === session.domain.toLowerCase()) return true;
+              
+              const isPersonal = session.label.includes('@') || session.label.toLowerCase().includes('google') || session.label.toLowerCase().includes('claude');
+              if (!isPersonal && item.domain !== undefined && typeof item.domain === 'string' && item.domain.toLowerCase() === session.domain.toLowerCase()) return true;
               return false;
             });
 
@@ -650,10 +698,12 @@ export default function App() {
                   quotaLimit = Number(q.limit);
                 }
                 if (Array.isArray(q.models) && q.models.length > 0) {
-                  const sum = q.models.reduce((s: number, m: any) => s + (m.percentage !== undefined ? Number(m.percentage) : 100), 0);
-                  const avgRemainingPct = sum / q.models.length;
+                  const minRemainingPct = q.models.reduce((min: number, m: any) => {
+                    const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
+                    return pct < min ? pct : min;
+                  }, 100);
                   quotaLimit = 100;
-                  quotaUsed = Math.max(0, 100 - avgRemainingPct);
+                  quotaUsed = Math.max(0, 100 - minRemainingPct);
                 }
               } else if (match.quota_percentage !== undefined) {
                 const remainingPct = Number(match.quota_percentage);
@@ -661,11 +711,25 @@ export default function App() {
                 quotaUsed = Math.max(0, 100 - remainingPct);
               }
 
+              let cooldownUntil = session.cooldownUntil;
+              if (match.cooldownUntil !== undefined) {
+                cooldownUntil = match.cooldownUntil;
+              } else if (match.cooldown_until !== undefined) {
+                cooldownUntil = match.cooldown_until;
+              }
+
+              let quotaGroups = session.quotaGroups;
+              if (match.quotaGroups !== undefined) {
+                quotaGroups = match.quotaGroups;
+              }
+
               updatedCount++;
               return normalizeSession({
                 ...session,
                 quotaUsed,
                 quotaLimit,
+                cooldownUntil,
+                quotaGroups,
                 lastChecked: checkedAt
               }, settings);
             }
@@ -708,10 +772,12 @@ export default function App() {
             if (item.quota && typeof item.quota === 'object') {
               const q = item.quota;
               if (Array.isArray(q.models) && q.models.length > 0) {
-                const sum = q.models.reduce((s: number, m: any) => s + (m.percentage !== undefined ? Number(m.percentage) : 100), 0);
-                const avgRemainingPct = sum / q.models.length;
+                const minRemainingPct = q.models.reduce((min: number, m: any) => {
+                  const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
+                  return pct < min ? pct : min;
+                }, 100);
                 quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - avgRemainingPct);
+                quotaUsed = Math.max(0, 100 - minRemainingPct);
               }
             } else if (item.quota_percentage !== undefined) {
               const remainingPct = Number(item.quota_percentage);
@@ -728,7 +794,8 @@ export default function App() {
               cookieCount: 1,
               quotaUsed,
               quotaLimit,
-              cooldownUntil: null,
+              cooldownUntil: item.cooldownUntil || item.cooldown_until || null,
+              quotaGroups: item.quotaGroups || null,
               createdAt: checkedAt,
               lastChecked: checkedAt,
               status: "healthy",
@@ -790,15 +857,29 @@ export default function App() {
                 quotaLimit = Number(q.limit);
               }
               if (Array.isArray(q.models) && q.models.length > 0) {
-                const sum = q.models.reduce((s: number, m: any) => s + (m.percentage !== undefined ? Number(m.percentage) : 100), 0);
-                const avgRemainingPct = sum / q.models.length;
+                const minRemainingPct = q.models.reduce((min: number, m: any) => {
+                  const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
+                  return pct < min ? pct : min;
+                }, 100);
                 quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - avgRemainingPct);
+                quotaUsed = Math.max(0, 100 - minRemainingPct);
               }
             } else if (json.quota_percentage !== undefined) {
               const remainingPct = Number(json.quota_percentage);
               quotaLimit = 100;
               quotaUsed = Math.max(0, 100 - remainingPct);
+            }
+
+            let cooldownUntil = active.cooldownUntil;
+            if (json.cooldownUntil !== undefined) {
+              cooldownUntil = json.cooldownUntil;
+            } else if (json.cooldown_until !== undefined) {
+              cooldownUntil = json.cooldown_until;
+            }
+
+            let quotaGroups = active.quotaGroups;
+            if (json.quotaGroups !== undefined) {
+              quotaGroups = json.quotaGroups;
             }
 
             setSessions((current) =>
@@ -808,6 +889,8 @@ export default function App() {
                     ...session,
                     quotaUsed,
                     quotaLimit,
+                    cooldownUntil,
+                    quotaGroups,
                     lastChecked: checkedAt
                   }, settings);
                 }
@@ -971,6 +1054,8 @@ export default function App() {
 
   const selectedSession =
     normalizedSessions.find((session) => session.id === selectedId) ?? activeSession;
+
+
 
   return (
     <div className="app-shell">
@@ -1209,40 +1294,103 @@ export default function App() {
               <div>
                 <h2>
                   <KeyRound size={24} />
-                  Active Session
+                  {selectedSession && selectedSession.id === activeId ? "Active Session" : "Selected Session"}
                 </h2>
-                <p>{activeSession ? activeSession.label : "No active session"}</p>
+                <p>{selectedSession ? selectedSession.label : "No session selected"}</p>
               </div>
-              {activeSession ? <StatusBadge status={activeSession.status} /> : null}
+              {selectedSession ? <StatusBadge status={selectedSession.status} /> : null}
             </div>
 
-            {activeSession ? (
+            {selectedSession ? (
               <>
                 <div className="detail-grid">
                   <div>
                     <span>Domain</span>
-                    <strong>{activeSession.domain}</strong>
+                    <strong>{selectedSession.domain}</strong>
                   </div>
                   <div>
                     <span>Cookie</span>
-                    <strong>{activeSession.cookieName}</strong>
+                    <strong>{selectedSession.cookieName}</strong>
                   </div>
                   <div>
                     <span>Stored value</span>
-                    <strong>{maskCookie(activeSession.cookieValue)}</strong>
+                    <strong>{maskCookie(selectedSession.cookieValue)}</strong>
                   </div>
                   <div>
                     <span>Last checked</span>
-                    <strong>{formatDateTime(activeSession.lastChecked)}</strong>
+                    <strong>{formatDateTime(selectedSession.lastChecked)}</strong>
                   </div>
                 </div>
                 <div className="active-meter">
-                  <ProgressBar value={usagePercent(activeSession)} status={activeSession.status} />
+                  <ProgressBar value={usagePercent(selectedSession)} status={selectedSession.status} />
                   <strong>
-                    {usagePercent(activeSession)}% ({activeSession.quotaUsed.toLocaleString()} /{" "}
-                    {activeSession.quotaLimit.toLocaleString()})
+                    {usagePercent(selectedSession)}% ({selectedSession.quotaUsed.toLocaleString()} /{" "}
+                    {selectedSession.quotaLimit.toLocaleString()})
                   </strong>
                 </div>
+
+                {selectedSession.cooldownUntil && (
+                  <div style={{ marginTop: '12px', fontSize: '13px', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="dot" style={{ background: '#3b82f6' }} />
+                    <span>Resets at: <strong>{formatDateTime(selectedSession.cooldownUntil)}</strong> ({minutesUntil(selectedSession.cooldownUntil)}m left)</span>
+                  </div>
+                )}
+
+                {selectedSession.quotaGroups && Array.isArray(selectedSession.quotaGroups) && selectedSession.quotaGroups.length > 0 && (
+                  <div className="quota-groups-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <h3 style={{ margin: '0', fontSize: '15px', fontWeight: '600', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Activity size={18} style={{ color: '#10b981' }} />
+                      Model Quota Details
+                    </h3>
+                    {selectedSession.quotaGroups.map((group: any, idx: number) => (
+                      <div key={idx} style={{ padding: '16px', background: '#1c1c1e', borderRadius: '12px', border: '1px solid #2c2c2e' }}>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {group.name}
+                        </h4>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {/* Weekly Limit Row */}
+                          {group.weekly && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>Weekly Limit</span>
+                                <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                  {group.weekly.resetText}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{group.weekly.percentage}%</span>
+                                <svg width="20" height="20" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                  <circle cx="12" cy="12" r="9" stroke={group.weekly.percentage >= 80 ? '#10b981' : group.weekly.percentage >= 40 ? '#f59e0b' : '#ef4444'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - group.weekly.percentage/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Five Hour Limit Row */}
+                          {group.fiveHour && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>Five Hour Limit</span>
+                                <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                  {group.fiveHour.resetText}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{group.fiveHour.percentage}%</span>
+                                <svg width="20" height="20" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                  <circle cx="12" cy="12" r="9" stroke={group.fiveHour.percentage >= 80 ? '#10b981' : group.fiveHour.percentage >= 40 ? '#f59e0b' : '#ef4444'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - group.fiveHour.percentage/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <div className="empty-state">

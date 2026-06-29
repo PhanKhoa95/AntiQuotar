@@ -1,0 +1,350 @@
+[
+  {
+    "email": "aa01090033816@gmail.com",
+    "isActive": true,
+    "status": "cached",
+    "snapshot": {
+      "timestamp": "2026-06-28T11:56:28.559Z",
+      "method": "local",
+      "email": "aa01090033816@gmail.com",
+      "models": [
+        {
+          "label": "Gemini 3.5 Flash (High)",
+          "modelId": "MODEL_PLACEHOLDER_M132",
+          "remainingPercentage": 0.0940757,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T15:23:41Z",
+          "timeUntilResetMs": 12432441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Low)",
+          "modelId": "MODEL_PLACEHOLDER_M187",
+          "remainingPercentage": 0.0940757,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T15:23:41Z",
+          "timeUntilResetMs": 12432441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (Low)",
+          "modelId": "MODEL_PLACEHOLDER_M36",
+          "remainingPercentage": 0.0940757,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T15:23:41Z",
+          "timeUntilResetMs": 12432441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (High)",
+          "modelId": "MODEL_PLACEHOLDER_M16",
+          "remainingPercentage": 0.0940757,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T15:23:41Z",
+          "timeUntilResetMs": 12432441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Claude Sonnet 4.6 (Thinking)",
+          "modelId": "MODEL_PLACEHOLDER_M35",
+          "remainingPercentage": 0.2927856,
+          "isExhausted": false,
+          "resetTime": "2026-07-03T07:36:58Z",
+          "timeUntilResetMs": 416429441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Claude Opus 4.6 (Thinking)",
+          "modelId": "MODEL_PLACEHOLDER_M26",
+          "remainingPercentage": 0.2927856,
+          "isExhausted": false,
+          "resetTime": "2026-07-03T07:36:58Z",
+          "timeUntilResetMs": 416429441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "GPT-OSS 120B (Medium)",
+          "modelId": "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
+          "remainingPercentage": 0.2927856,
+          "isExhausted": false,
+          "resetTime": "2026-07-03T07:36:58Z",
+          "timeUntilResetMs": 416429441,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Medium)",
+          "modelId": "MODEL_PLACEHOLDER_M20",
+          "remainingPercentage": 0.0940757,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T15:23:41Z",
+          "timeUntilResetMs": 12432441,
+          "isAutocompleteOnly": false
+        }
+      ],
+      "promptCredits": {
+        "available": 500,
+        "monthly": 50000,
+        "usedPercentage": 0.99,
+        "remainingPercentage": 0.01
+      }
+    },
+    "cacheAge": 21
+  },
+  {
+    "email": "hoangmai160501@gmail.com",
+    "isActive": false,
+    "status": "cached",
+    "snapshot": {
+      "timestamp": "2026-06-28T11:54:48.910Z",
+      "method": "google",
+      "email": "hoangmai160501@gmail.com",
+      "models": [
+        {
+          "label": "Claude Opus 4.6 (Thinking)",
+          "modelId": "claude-opus-4-6-thinking",
+          "isExhausted": false,
+          "resetTime": "2026-06-29T07:39:11Z",
+          "timeUntilResetMs": 71062090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Claude Sonnet 4.6 (Thinking)",
+          "modelId": "claude-sonnet-4-6",
+          "isExhausted": false,
+          "resetTime": "2026-06-29T07:39:11Z",
+          "timeUntilResetMs": 71062090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 2.5 Pro",
+          "modelId": "gemini-2.5-pro",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3 Flash",
+          "modelId": "gemini-3-flash",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Flash Lite",
+          "modelId": "gemini-2.5-flash",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3.1 Flash Lite",
+          "modelId": "gemini-2.5-flash-thinking",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3.1 Pro (High)",
+          "modelId": "gemini-3.1-pro-high",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (High)",
+          "modelId": "gemini-pro-agent",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (Low)",
+          "modelId": "gemini-3.1-pro-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (High)",
+          "modelId": "gemini-3-flash-agent",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Low)",
+          "modelId": "gemini-3.5-flash-extra-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Medium)",
+          "modelId": "gemini-3.5-flash-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:52Z",
+          "timeUntilResetMs": 18003090,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "GPT-OSS 120B (Medium)",
+          "modelId": "gpt-oss-120b-medium",
+          "isExhausted": false,
+          "resetTime": "2026-06-29T07:39:11Z",
+          "timeUntilResetMs": 71062090,
+          "isAutocompleteOnly": false
+        }
+      ]
+    },
+    "cacheAge": 120
+  },
+  {
+    "email": "khoap1220@gmail.com",
+    "isActive": false,
+    "status": "cached",
+    "snapshot": {
+      "timestamp": "2026-06-28T11:54:50.739Z",
+      "method": "google",
+      "email": "khoap1220@gmail.com",
+      "models": [
+        {
+          "label": "Claude Opus 4.6 (Thinking)",
+          "modelId": "claude-opus-4-6-thinking",
+          "remainingPercentage": 0.07677493,
+          "isExhausted": false,
+          "resetTime": "2026-07-02T02:57:33Z",
+          "timeUntilResetMs": 313362261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Claude Sonnet 4.6 (Thinking)",
+          "modelId": "claude-sonnet-4-6",
+          "remainingPercentage": 0.07677493,
+          "isExhausted": false,
+          "resetTime": "2026-07-02T02:57:33Z",
+          "timeUntilResetMs": 313362261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 2.5 Pro",
+          "modelId": "gemini-2.5-pro",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3 Flash",
+          "modelId": "gemini-3-flash",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Flash Lite",
+          "modelId": "gemini-2.5-flash-thinking",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3.1 Flash Lite",
+          "modelId": "gemini-2.5-flash",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": true
+        },
+        {
+          "label": "Gemini 3.1 Pro (High)",
+          "modelId": "gemini-pro-agent",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (High)",
+          "modelId": "gemini-3.1-pro-high",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.1 Pro (Low)",
+          "modelId": "gemini-3.1-pro-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (High)",
+          "modelId": "gemini-3-flash-agent",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Low)",
+          "modelId": "gemini-3.5-flash-extra-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "Gemini 3.5 Flash (Medium)",
+          "modelId": "gemini-3.5-flash-low",
+          "remainingPercentage": 1,
+          "isExhausted": false,
+          "resetTime": "2026-06-28T16:54:54Z",
+          "timeUntilResetMs": 18003261,
+          "isAutocompleteOnly": false
+        },
+        {
+          "label": "GPT-OSS 120B (Medium)",
+          "modelId": "gpt-oss-120b-medium",
+          "remainingPercentage": 0.07677493,
+          "isExhausted": false,
+          "resetTime": "2026-07-02T02:57:33Z",
+          "timeUntilResetMs": 313362261,
+          "isAutocompleteOnly": false
+        }
+      ]
+    },
+    "cacheAge": 119
+  }
+]

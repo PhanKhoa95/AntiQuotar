@@ -1,25 +1,25 @@
-# BRIEFING — 2026-06-26T14:14:50+07:00
+# BRIEFING — 2026-06-28T16:40:00Z
 
 ## Mission
-Initialize the project, spawn the Orchestrator, set crons, and monitor project completion.
+Ensure quota synchronization (Gemini, Claude, GPT) between frontend, backend /v1/accounts and active session state is implemented and verified.
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: c:\Users\KHOA MEDIA\Documents\AntiQuotar\.agents\sentinel
-- Orchestrator: 989e2cd1-28c0-4776-a41b-8bced917734b
-- Victory Auditor: to be spawned on victory claim
+- Working directory: E:\AntiQuotar\.agents\sentinel
+- Orchestrator: TBD
+- Victory Auditor: TBD
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
 
 ## User Context
-- **Last user request**: Initialize core features of AntiQuotar and build automated Playwright tests.
+- **Last user request**: Develop synchronization mechanism and verification tests for model-specific quotas, active account CLI sync, interval migration, and automated Playwright test case.
 - **Pending clarifications**: none
 - **Delivered results**: none
 
 ## Project Status
-- **Phase**: in progress
+- **Phase**: not started
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -27,4 +27,5 @@ Initialize the project, spawn the Orchestrator, set crons, and monitor project c
 - **Retry count**: 0
 
 ## Artifact Index
-- c:\Users\KHOA MEDIA\Documents\AntiQuotar\ORIGINAL_REQUEST.md — Verbatim user request record
+- E:\AntiQuotar\ORIGINAL_REQUEST.md — Verbatim user request record
+- E:\AntiQuotar\.agents\ORIGINAL_REQUEST.md — Verbatim user request record (agents folder copy)
