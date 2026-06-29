@@ -812,19 +812,17 @@ export default function App() {
             }, settings);
           });
 
-          if (forceRefresh === true) {
-            if (updatedCount > 0 || newCount > 0) {
-              setTimeout(() => {
-                let msg = "";
-                if (updatedCount > 0) msg += `Synchronized ${updatedCount} session(s) from LS Gateway. `;
-                if (newCount > 0) msg += `Automatically imported ${newCount} new session(s) from LS Gateway.`;
-                addLog(msg.trim(), "success");
-              }, 0);
-            } else {
-              setTimeout(() => {
-                addLog("Quota state refreshed from LS Gateway (0 sessions matched).", "success");
-              }, 0);
-            }
+          if (updatedCount > 0 || newCount > 0) {
+            setTimeout(() => {
+              let msg = "";
+              if (updatedCount > 0) msg += `Synchronized ${updatedCount} session(s) from LS Gateway. `;
+              if (newCount > 0) msg += `Automatically imported ${newCount} new session(s) from LS Gateway.`;
+              addLog(msg.trim(), "success");
+            }, 0);
+          } else if (forceRefresh === true) {
+            setTimeout(() => {
+              addLog("Quota state refreshed from LS Gateway (0 sessions matched).", "success");
+            }, 0);
           }
           return [...updated, ...imported];
         });
@@ -910,16 +908,14 @@ export default function App() {
             return session;
           });
 
-          if (forceRefresh === true) {
-            if (updatedCount > 0) {
-              setTimeout(() => {
-                addLog(`Synchronized matching session(s) quota from LS Gateway.`, "success");
-              }, 0);
-            } else {
-              setTimeout(() => {
-                addLog("LS Gateway response did not match any session.", "warning");
-              }, 0);
-            }
+          if (updatedCount > 0) {
+            setTimeout(() => {
+              addLog(`Synchronized matching session(s) quota from LS Gateway.`, "success");
+            }, 0);
+          } else if (forceRefresh === true) {
+            setTimeout(() => {
+              addLog("LS Gateway response did not match any session.", "warning");
+            }, 0);
           }
           return nextSessions;
         });
