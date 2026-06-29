@@ -818,92 +818,98 @@ export default function App() {
           return [...updated, ...imported];
         });
       } else if (json && typeof json === 'object') {
-        const active = sessions.find((session) => session.id === activeId) ?? sessions[0] ?? null;
-        if (active) {
-          let isMatch = true;
-          if (json.id !== undefined && String(json.id) !== active.id) isMatch = false;
-          if (json.label !== undefined && typeof json.label === 'string' && json.label.toLowerCase() !== active.label.toLowerCase()) isMatch = false;
-          if (json.email !== undefined && typeof json.email === 'string' && json.email.toLowerCase() === active.label.toLowerCase()) isMatch = true; // email match takes priority
-          if (json.domain !== undefined && typeof json.domain === 'string' && json.domain.toLowerCase() !== active.domain.toLowerCase()) isMatch = false;
-
-          if (isMatch) {
-            let quotaUsed = active.quotaUsed;
-            let quotaLimit = active.quotaLimit;
-
-            if (json.quotaUsed !== undefined) {
-              quotaUsed = Number(json.quotaUsed);
-            } else if (json.used !== undefined) {
-              quotaUsed = Number(json.used);
-            } else if (json.quota_used !== undefined) {
-              quotaUsed = Number(json.quota_used);
+        setSessions((current) => {
+          let updatedCount = 0;
+          const nextSessions = current.map((session) => {
+            let isMatch = false;
+            if (json.id !== undefined && String(json.id) === session.id) isMatch = true;
+            else if (json.label !== undefined && typeof json.label === 'string' && json.label.toLowerCase() === session.label.toLowerCase()) isMatch = true;
+            else if (json.email !== undefined && typeof json.email === 'string' && json.email.toLowerCase() === session.label.toLowerCase()) isMatch = true;
+            else {
+              const isPersonal = session.label.includes('@') || session.label.toLowerCase().includes('google') || session.label.toLowerCase().includes('claude');
+              if (!isPersonal && json.domain !== undefined && typeof json.domain === 'string' && json.domain.toLowerCase() === session.domain.toLowerCase()) isMatch = true;
             }
 
-            if (json.quotaLimit !== undefined) {
-              quotaLimit = Number(json.quotaLimit);
-            } else if (json.limit !== undefined) {
-              quotaLimit = Number(json.limit);
-            } else if (json.quota_limit !== undefined) {
-              quotaLimit = Number(json.quota_limit);
-            } else if (json.quota !== undefined && typeof json.quota !== 'object') {
-              quotaLimit = Number(json.quota);
-            }
+            if (isMatch) {
+              updatedCount++;
+              let quotaUsed = session.quotaUsed;
+              let quotaLimit = session.quotaLimit;
 
-            if (json.quota && typeof json.quota === 'object') {
-              const q = json.quota;
-              if (q.used !== undefined) {
-                quotaUsed = Number(q.used);
+              if (json.quotaUsed !== undefined) {
+                quotaUsed = Number(json.quotaUsed);
+              } else if (json.used !== undefined) {
+                quotaUsed = Number(json.used);
+              } else if (json.quota_used !== undefined) {
+                quotaUsed = Number(json.quota_used);
               }
-              if (q.limit !== undefined) {
-                quotaLimit = Number(q.limit);
+
+              if (json.quotaLimit !== undefined) {
+                quotaLimit = Number(json.quotaLimit);
+              } else if (json.limit !== undefined) {
+                quotaLimit = Number(json.limit);
+              } else if (json.quota_limit !== undefined) {
+                quotaLimit = Number(json.quota_limit);
+              } else if (json.quota !== undefined && typeof json.quota !== 'object') {
+                quotaLimit = Number(json.quota);
               }
-              if (Array.isArray(q.models) && q.models.length > 0) {
-                const minRemainingPct = q.models.reduce((min: number, m: any) => {
-                  const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
-                  return pct < min ? pct : min;
-                }, 100);
-                quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - minRemainingPct);
-              }
-            } else if (json.quota_percentage !== undefined) {
-              const remainingPct = Number(json.quota_percentage);
-              quotaLimit = 100;
-              quotaUsed = Math.max(0, 100 - remainingPct);
-            }
 
-            let cooldownUntil = active.cooldownUntil;
-            if (json.cooldownUntil !== undefined) {
-              cooldownUntil = json.cooldownUntil;
-            } else if (json.cooldown_until !== undefined) {
-              cooldownUntil = json.cooldown_until;
-            }
-
-            let quotaGroups = active.quotaGroups;
-            if (json.quotaGroups !== undefined) {
-              quotaGroups = json.quotaGroups;
-            }
-
-            setSessions((current) =>
-              current.map((session) => {
-                if (session.id === active.id) {
-                  return normalizeSession({
-                    ...session,
-                    quotaUsed,
-                    quotaLimit,
-                    cooldownUntil,
-                    quotaGroups,
-                    lastChecked: checkedAt
-                  }, settings);
+              if (json.quota && typeof json.quota === 'object') {
+                const q = json.quota;
+                if (q.used !== undefined) {
+                  quotaUsed = Number(q.used);
                 }
-                return session;
-              })
-            );
-            addLog(`Synchronized active session ${active.label} quota from LS Gateway.`, "success");
+                if (q.limit !== undefined) {
+                  quotaLimit = Number(q.limit);
+                }
+                if (Array.isArray(q.models) && q.models.length > 0) {
+                  const minRemainingPct = q.models.reduce((min: number, m: any) => {
+                    const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
+                    return pct < min ? pct : min;
+                  }, 100);
+                  quotaLimit = 100;
+                  quotaUsed = Math.max(0, 100 - minRemainingPct);
+                }
+              } else if (json.quota_percentage !== undefined) {
+                const remainingPct = Number(json.quota_percentage);
+                quotaLimit = 100;
+                quotaUsed = Math.max(0, 100 - remainingPct);
+              }
+
+              let cooldownUntil = session.cooldownUntil;
+              if (json.cooldownUntil !== undefined) {
+                cooldownUntil = json.cooldownUntil;
+              } else if (json.cooldown_until !== undefined) {
+                cooldownUntil = json.cooldown_until;
+              }
+
+              let quotaGroups = session.quotaGroups;
+              if (json.quotaGroups !== undefined) {
+                quotaGroups = json.quotaGroups;
+              }
+
+              return normalizeSession({
+                ...session,
+                quotaUsed,
+                quotaLimit,
+                cooldownUntil,
+                quotaGroups,
+                lastChecked: checkedAt
+              }, settings);
+            }
+            return session;
+          });
+
+          if (updatedCount > 0) {
+            setTimeout(() => {
+              addLog(`Synchronized matching session(s) quota from LS Gateway.`, "success");
+            }, 0);
           } else {
-            addLog(`LS Gateway response did not match active session ${active.label}.`, "warning");
+            setTimeout(() => {
+              addLog("LS Gateway response did not match any session.", "warning");
+            }, 0);
           }
-        } else {
-          addLog("No active session to update quota from LS Gateway.", "warning");
-        }
+          return nextSessions;
+        });
       } else {
         addLog("LS Gateway returned invalid status format.", "warning");
       }
