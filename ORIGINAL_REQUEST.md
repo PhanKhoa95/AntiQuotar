@@ -37,3 +37,13 @@ User has suggested using the following CLI command to fetch raw JSON quota data:
 
 Please investigate if this command is available on the system PATH and consider incorporating it into the quota sync mechanism (e.g. in the CLI or local-bridge) to ensure accurate quota values.
 
+## Follow-up — 2026-06-29T02:40:29Z
+
+User has provided detailed documentation on the Account Rotation mechanism for Antigravity 2.0:
+- Session tokens are stored at `~/.antigravity/credentials/session.json`.
+- Rotation can be achieved by swapping `session.json` with pre-authenticated profile files (e.g. from `~/.antigravity/credentials/profiles/accountX.json`) and restarting the Daemon process (`ag-daemon.exe` or `ag-daemon`).
+- API endpoint for quota check in 2.0 can be targeted.
+
+Please keep this documentation in mind and use it to enhance or align the quota check and account rotation strategy if needed.
+
+
