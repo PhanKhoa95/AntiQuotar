@@ -1182,7 +1182,7 @@ test.describe('Tier 4: Real-World Scenarios', () => {
   });
 
   test('51. Scenario 7 (Interactive promotion, filesystem/credentials sync, and no login prompt)', async ({ page }) => {
-    const simulatedCredsDir = path.resolve(__dirname, 'simulated-creds');
+    const simulatedCredsDir = path.resolve(__dirname, `simulated-creds-${process.pid}`);
     const profilesDir = path.join(simulatedCredsDir, 'profiles');
     const sessionJsonPath = path.join(simulatedCredsDir, 'session.json');
     const cliConfigJsonPath = path.join(simulatedCredsDir, 'config.json');
@@ -1296,10 +1296,12 @@ test.describe('Tier 4: Real-World Scenarios', () => {
       // Verify Alice is active
       await expect(page.locator('#sessions .panel-heading p')).toHaveText('alice@google.com');
 
-      // Switch to Bob by clicking ArrowUp "Set active" button on Bob's row
+      const switchResponsePromise = page.waitForResponse(resp =>
+        resp.url().includes('/v1/accounts/active') && resp.request().method() === 'POST'
+      );
+      // click the set active button
       await page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 'bob@google.com' }).locator('button[aria-label="Set active"]').click();
-
-      // Verify Bob is now active in UI
+      await switchResponsePromise;
       await expect(page.locator('#sessions .panel-heading p')).toHaveText('bob@google.com');
 
       // Verify session.json is updated on disk

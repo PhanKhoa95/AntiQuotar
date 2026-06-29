@@ -379,6 +379,27 @@ export default function App() {
       } catch (e) {
         console.error("Invalid lsEndpoint:", e);
       }
+    } else if (!activeId && settings.lsEndpoint.trim()) {
+      try {
+        const url = new URL(settings.lsEndpoint);
+        const signoutUrl = `${url.protocol}//${url.host}/v1/accounts/signout`;
+        fetch(signoutUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.error("LS Gateway signout returned error status:", res.status);
+            } else {
+              console.log("LS Gateway signout success.");
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to sync signout to LS Gateway:", err);
+          });
+      } catch (e) {
+        console.error("Invalid lsEndpoint:", e);
+      }
     }
   }, [activeId, settings.lsEndpoint]);
 

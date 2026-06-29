@@ -21,7 +21,7 @@ Review the correctness, completeness, robustness, and interface conformance of t
 
 ## Current Parent
 - Conversation ID: 5ee553eb-6abb-4eae-9bd6-f3a3ea9f9789
-- Updated: not yet
+- Updated: 2026-06-29T13:25:37+07:00
 
 ## Review Scope
 - **Files to review**: `tests/antiquotar.spec.ts`, `tools/local-bridge.cjs`, `src/App.tsx`
@@ -29,17 +29,23 @@ Review the correctness, completeness, robustness, and interface conformance of t
 - **Review criteria**: correctness, robustness, path resolution, credential sync logic, 2.0 credential specs, race conditions, syntax errors
 
 ## Key Decisions Made
-- [TBD]
+- Issued a REQUEST_CHANGES verdict due to a race condition in Test 51 file reading, a command-line credential parameter length limit of 512 characters in cmdkey, and missing logout synchronization.
 
 ## Artifact Index
-- [TBD]
+- `y:\AntiQuotar\.agents\reviewer_swapping_2\review.md` — Quality and Adversarial Review Report
+- `y:\AntiQuotar\.agents\reviewer_swapping_2\handoff.md` — Handoff report following the Handoff Protocol
 
 ## Review Checklist
-- **Items reviewed**: none
-- **Verdict**: pending
-- **Unverified claims**: none
+- **Items reviewed**: `tests/antiquotar.spec.ts` (Test 51), `tools/local-bridge.cjs`, `src/App.tsx`
+- **Verdict**: REQUEST_CHANGES
+- **Unverified claims**: VSCode extension UI behavior (cannot be run headless)
 
 ## Attack Surface
-- **Hypotheses tested**: none
-- **Vulnerabilities found**: none
-- **Untested angles**: E2E browser test scenario, credentials sync logic, switching logic
+- **Hypotheses tested**: 
+  - Race conditions in Playwright test due to asynchronous React effects (confirmed: DOM assertions pass before the async file writes finish)
+  - Character limits on shell-spawned password parameters (confirmed: `cmdkey` has 512-character constraint)
+- **Vulnerabilities found**: 
+  - Test flakiness due to missing await for `/v1/accounts/active` response in Test 51
+  - Truncation of large OAuth JWTs in `cmdkey` Generic Credentials
+  - Sensitive token left in `session.json` on disk after logging out of all accounts on dashboard
+- **Untested angles**: none
