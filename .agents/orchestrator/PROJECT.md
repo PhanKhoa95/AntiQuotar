@@ -10,8 +10,8 @@
 | 1 | Decomposition & Planning | Create planning, progress, context files. | None | DONE |
 | 2 | Codebase Exploration | Explore local-bridge.cjs fallback, CLI error handling, React state update logic, and investigate system PATH for `antigravity agents quota`. | M1 | DONE |
 | 3 | Core Fixes | Wrap fallback, handle CLI account failure, integrate `antigravity agents quota` if available, and fix React session matching logic. | M2 | DONE |
-| 4 | Verification & Audit | Verify 5-hour limit, run smoke and Playwright tests, run Forensic Audit. | M3 | IN_PROGRESS |
-| 5 | Handoff & Completion | Synthesis and reporting. | M4 | PLANNED |
+| 4 | Verification & Audit | Verify 5-hour limit, run smoke and Playwright tests, run Forensic Audit. | M3 | DONE |
+| 5 | Handoff & Completion | Synthesis and reporting. | M4 | DONE |
 
 ## Interface Contracts
 ### React CMS ↔ Local Bridge CLI / API
