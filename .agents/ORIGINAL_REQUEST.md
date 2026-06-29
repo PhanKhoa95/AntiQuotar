@@ -56,3 +56,30 @@ Create an E2E Playwright test case named `20d. Quota model-specific groups sync 
 - [ ] The test must verify that model groups are rendered with the correct parsed values.
 - [ ] The test must intercept and verify the POST request sent to `/v1/accounts/active` upon active session changes.
 - [ ] All 53 tests in the Playwright suite must pass successfully.
+
+## Follow-up — 2026-06-29T06:17:31Z
+
+Complete and finalize the real-time active account switching system between the Control CMS, the local-bridge server, and the desktop client applications (including the VSCode Extension and the custom IDE Antigravity.exe) by leveraging synchronized Windows Credential Manager updates.
+
+Working directory: Y:\AntiQuotar
+Integrity mode: development
+
+## Requirements
+
+### R1. Complete Real-Time Swapping
+Ensure that when a user promotes an account to active on the CMS dashboard, the token is written to `~/.antigravity/credentials/session.json`, the CLI 1.x configuration is updated, and the Windows Credential Manager target `gemini:antigravity` is updated immediately with the mapped JSON token format.
+
+### R2. Verify App Synchronization
+Verify that when the credentials are changed, the IDE `Antigravity.exe` and VSCode extension successfully reflect the new active account name without prompting for a re-login.
+
+### R3. Interactive E2E Testing Scenarios
+Design and execute a new interactive E2E browser test scenario that walks through promoting an account, modifying it, verifying the sync on the simulated file system and credential cache, and verifying that no login screen prompts are displayed.
+
+## Acceptance Criteria
+
+### Verification & Correctness
+- [ ] Active account switching from the CMS dashboard successfully updates `session.json`, the 1.x CLI config, and the Windows Credential Manager target `gemini:antigravity` with the correct JSON payload layout.
+- [ ] A new interactive E2E browser test is added and executed successfully.
+- [ ] Running the smoke tests `npm run test:smoke` succeeds.
+- [ ] Running the Playwright test suite `npx playwright test` succeeds with all 54 tests passing.
+
