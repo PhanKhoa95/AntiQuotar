@@ -322,6 +322,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const isSwitchingActiveRef = useRef(false);
+  // Tracks whether gateway was already offline — avoids spamming the log on every auto-sync poll
+  const gatewayWasOfflineRef = useRef<boolean>(false);
 
 
 
@@ -687,6 +689,7 @@ export default function App() {
         return;
       }
       setGatewayOnline(true);
+      gatewayWasOfflineRef.current = false; // Reset so next offline event is logged again
       const json = await response.json();
       
       if (json && json.activeId && json.activeId !== activeId && !isSwitchingActiveRef.current) {
@@ -961,7 +964,12 @@ export default function App() {
       }
     } catch (error: any) {
       setGatewayOnline(false);
-      addLog(`LS Gateway connection failed: ${error.message || error}`, "warning");
+      // Only log on first failure or when transitioning from online→offline.
+      // Subsequent auto-sync failures while gateway is already down are silent to avoid log spam.
+      if (!gatewayWasOfflineRef.current) {
+        gatewayWasOfflineRef.current = true;
+        addLog(`LS Gateway offline — run "AntiQuotar.bat ls" to start it. (${error.message || error})`, "info");
+      }
     }
   };
 
