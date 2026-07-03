@@ -511,8 +511,8 @@ if not exist "%ROOT%\node_modules" (
 echo.
 echo Starting AntiQuotar Control CMS on http://127.0.0.1:%CONTROL_PORT% ...
 start "AntiQuotar Control CMS :%CONTROL_PORT%" cmd /k "cd /d ""%ROOT%"" && npm run dev -- --host 127.0.0.1 --port %CONTROL_PORT%"
-echo Starting Quota Bridge Server on http://127.0.0.1:5188 ...
-start "AntiQuotar Quota Bridge :5188" cmd /k "cd /d ""%ROOT%"" && node tools/local-bridge.js"
+echo Starting Quota Bridge Server on http://127.0.0.1:5189 ...
+start "AntiQuotar Quota Bridge :5189" cmd /k "cd /d ""%ROOT%"" && node ""%ROOT%\tools\local-bridge.js"""
 timeout /t 3 /nobreak >nul
 start "" "http://127.0.0.1:%CONTROL_PORT%"
 exit /b 0

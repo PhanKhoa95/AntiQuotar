@@ -90,7 +90,7 @@ const defaultSettings: AppSettings = {
   autoRotate: true,
   rotateThreshold: 80,
   cooldownMinutes: 300, // 5 hours default cooldown
-  lsEndpoint: "http://127.0.0.1:5188/v1/accounts",
+  lsEndpoint: "http://127.0.0.1:5189/v1/accounts",
   storeRawCookie: true,
   syncIntervalMinutes: 1 // 1 minute default sync interval
 };
@@ -1711,7 +1711,7 @@ export default function App() {
                   name="lsEndpoint"
                   value={settings.lsEndpoint}
                   onChange={(event) => setSettings((current) => ({ ...current, lsEndpoint: event.target.value }))}
-                  placeholder="e.g. http://127.0.0.1:5188/v1/accounts"
+                  placeholder="e.g. http://127.0.0.1:5189/v1/accounts"
                 />
               </Field>
               <Field label="Default Cooldown (minutes)" htmlFor="settings-cooldown-minutes">
