@@ -179,6 +179,34 @@ const minutesUntil = (iso: string | null) => {
 };
 
 const usagePercent = (session: CookieSession) => {
+  if (session.quotaGroups && Array.isArray(session.quotaGroups) && session.quotaGroups.length > 0) {
+    let maxUsed = 0;
+    session.quotaGroups.forEach((group) => {
+      const weeklyPct = group.weekly ? group.weekly.percentage : null;
+      const fiveHourPct = group.fiveHour ? group.fiveHour.percentage : null;
+
+      if (weeklyPct !== null && weeklyPct > maxUsed) {
+        maxUsed = weeklyPct;
+      }
+      if (fiveHourPct !== null && fiveHourPct > maxUsed) {
+        maxUsed = fiveHourPct;
+      }
+      if (group.limit && group.limit.percentage !== undefined) {
+        const lp = Number(group.limit.percentage);
+        if (lp > maxUsed) {
+          maxUsed = lp;
+        }
+      }
+      if (group.percentage !== undefined) {
+        const gp = Number(group.percentage);
+        if (gp > maxUsed) {
+          maxUsed = gp;
+        }
+      }
+    });
+    return maxUsed;
+  }
+
   if (session.quotaLimit <= 0) return 0;
   return Math.min(100, Math.round((session.quotaUsed / session.quotaLimit) * 100));
 };
@@ -302,7 +330,215 @@ function Field({
   );
 }
 
+const translateLogMessage = (msg: string, lang: string) => {
+  if (lang !== 'vi') return msg;
+  let res = msg;
+  if (res.includes("LS Gateway offline — run \"AntiQuotar.bat ls\" to start it.")) {
+    res = res.replace("LS Gateway offline — run \"AntiQuotar.bat ls\" to start it.", "LS Gateway ngoại tuyến — chạy \"AntiQuotar.bat ls\" để khởi động.");
+  }
+  if (res.includes("Failed to fetch")) {
+    res = res.replace("Failed to fetch", "Không thể kết nối");
+  }
+  if (res.includes("Cookie import failed. Check the selected format.")) {
+    res = "Nhập cookie thất bại. Vui lòng kiểm tra lại định dạng chọn.";
+  }
+  if (res.includes("Domain is required before adding a cookie session.")) {
+    res = "Cần nhập tên miền trước khi thêm phiên cookie.";
+  }
+  if (res.includes("No cookie pairs were detected in the inbox.")) {
+    res = "Không phát hiện thấy cặp cookie nào trong hộp thư.";
+  }
+  if (res.startsWith("Added ") && res.includes(" cookie pair(s) for ")) {
+    res = res.replace("Added ", "Đã thêm ").replace(" cookie pair(s) for ", " cặp cookie cho ");
+  }
+  if (res.includes("Initiating Google Login flow via Antigravity LS Gateway...")) {
+    res = "Đang khởi tạo luồng đăng nhập Google qua Antigravity LS Gateway...";
+  }
+  if (res.includes("Authentication browser window requested. Please log in on the opened tab.")) {
+    res = "Đã yêu cầu mở cửa sổ trình duyệt xác thực. Vui lòng đăng nhập trên tab mới mở.";
+  }
+  if (res.includes("Failed to initiate login flow from LS Gateway.")) {
+    res = "Không thể khởi tạo luồng đăng nhập từ LS Gateway.";
+  }
+  if (res.startsWith("Failed to connect to LS Gateway:")) {
+    res = res.replace("Failed to connect to LS Gateway:", "Lỗi kết nối tới LS Gateway:");
+  }
+  if (res.startsWith("Auto-rotated to ") && res.includes(" after quota check.")) {
+    res = res.replace("Auto-rotated to ", "Tự động xoay vòng sang ").replace(" after quota check.", " sau khi kiểm tra hạn ngạch.");
+  }
+  if (res.includes("Quota state refreshed from local session values.")) {
+    res = "Đã làm mới trạng thái hạn ngạch từ giá trị phiên cục bộ.";
+  }
+  if (res.startsWith("LS endpoint returned error status:")) {
+    res = res.replace("LS endpoint returned error status:", "Đầu cuối LS trả về trạng thái lỗi:");
+  }
+  if (res.includes("Quota state refreshed from LS Gateway (0 sessions matched).")) {
+    res = "Đã làm mới trạng thái hạn ngạch từ LS Gateway (0 phiên khớp).";
+  }
+  if (res.includes("Synchronized matching session(s) quota from LS Gateway.")) {
+    res = "Đã đồng bộ hạn ngạch phiên tương thích từ LS Gateway.";
+  }
+  if (res.includes("LS Gateway response did not match any session.")) {
+    res = "Phản hồi từ LS Gateway không khớp với phiên nào.";
+  }
+  if (res.includes("LS Gateway returned invalid status format.")) {
+    res = "LS Gateway trả về định dạng trạng thái không hợp lệ.";
+  }
+  if (res.startsWith("Rotated active session to ")) {
+    res = res.replace("Rotated active session to ", "Đã xoay vòng phiên hoạt động sang ");
+  }
+  if (res.startsWith("Promoted ") && res.includes(" as active session.")) {
+    res = res.replace("Promoted ", "Đã thăng cấp ").replace(" as active session.", " làm phiên hoạt động.");
+  }
+  if (res.startsWith("Removed ")) {
+    res = res.replace("Removed ", "Đã xóa ");
+  }
+  if (res.includes("Exported local control state.")) {
+    res = "Đã xuất dữ liệu trạng thái điều khiển cục bộ.";
+  }
+  if (res.startsWith("Imported ") && res.includes(" session(s).")) {
+    res = res.replace("Imported ", "Đã nhập ").replace(" session(s).", " phiên.");
+  }
+  if (res.includes("Import failed. Paste an AntiQuotar JSON export.")) {
+    res = "Nhập thất bại. Vui lòng dán nội dung xuất JSON của AntiQuotar.";
+  }
+  if (res.includes("Command copied to clipboard!")) {
+    res = "Đã sao chép lệnh vào bộ nhớ tạm!";
+  }
+  return res;
+};
+
+const translations: Record<string, Record<string, string>> = {
+  en: {
+    dashboard: "Dashboard",
+    cookieInbox: "Cookie Inbox",
+    serviceLocal: "Service: Local",
+    bridgeOnline: "(Bridge Online)",
+    bridgeOffline: "(Bridge Offline)",
+    runCheck: "Run Check",
+    activeSession: "Active Session",
+    selectedSession: "Selected Session",
+    noActiveSession: "No active session",
+    noSessionSelected: "No session selected",
+    domain: "Domain",
+    cookie: "Cookie",
+    storedValue: "Stored value",
+    lastChecked: "Last checked",
+    resetsAt: "Resets at",
+    left: "left",
+    modelQuotaDetails: "Model Quota Details",
+    weeklyLimit: "Weekly Limit",
+    fiveHourLimit: "Five Hour Limit",
+    addCookieToBegin: "Add a cookie session to begin rotation.",
+    filterSessions: "Filter sessions",
+    export: "Export",
+    importState: "Import State",
+    exportState: "Export State",
+    autoRotate: "Auto-rotate",
+    threshold: "Threshold",
+    rotateNow: "Rotate Now",
+    quickCooldown: "Quick Cooldown",
+    addCookie: "Add Cookie",
+    cookieFormat: "Cookie Format",
+    inboxPlaceholder: "Paste cookie headers, raw strings, or Netscape/JSON format here...",
+    customLabel: "Custom Label (Optional)",
+    optional: "(Optional)",
+    addGoogleAccount: "Add Google Account",
+    addAntigravity: "Add Antigravity",
+    systemLogs: "System Logs",
+    clearLogs: "Clear Logs",
+    noLogsYet: "No logs yet.",
+    settings: "Settings",
+    defaultCooldown: "Default Cooldown (minutes)",
+    autoSyncInterval: "Auto-Sync Interval (minutes, 0 to disable)",
+    enableAutoRotation: "Enable Auto-rotation when quota limit reached",
+    storeRawCookie: "Store raw cookie strings in localStorage",
+    rotateThresholdLabel: "Rotate Threshold",
+    saveClose: "Save & Close",
+    done: "Done",
+    parsed: "parsed",
+    addGoogleAccountTitle: "Add Google Account",
+    commandInstruction: "Please run this command in your VS Code terminal or PowerShell to log in:",
+    loginDoneInstruction: "Once logged in on your browser, click Done below. The new account will be imported automatically.",
+    copy: "Copy",
+    loginInstructionLine: "Since the local server runs as a background service, it cannot directly open terminal windows on your desktop.",
+    usable: "Usable",
+    unusable: "Limit Reached",
+    cooldownStatus: "Cooldown"
+  },
+  vi: {
+    dashboard: "Bảng điều khiển",
+    cookieInbox: "Hộp thư Cookie",
+    serviceLocal: "Dịch vụ: Nội bộ",
+    bridgeOnline: "(Kết nối hoạt động)",
+    bridgeOffline: "(Kết nối ngoại tuyến)",
+    runCheck: "Kiểm tra hạn ngạch",
+    activeSession: "Phiên hoạt động",
+    selectedSession: "Phiên được chọn",
+    noActiveSession: "Không có phiên hoạt động",
+    noSessionSelected: "Chưa chọn phiên",
+    domain: "Tên miền",
+    cookie: "Cookie",
+    storedValue: "Giá trị lưu trữ",
+    lastChecked: "Kiểm tra cuối lúc",
+    resetsAt: "Đặt lại lúc",
+    left: "còn lại",
+    modelQuotaDetails: "Chi tiết hạn ngạch mô hình",
+    weeklyLimit: "Hạn mức tuần",
+    fiveHourLimit: "Hạn mức 5 giờ",
+    addCookieToBegin: "Thêm phiên cookie để bắt đầu tự động xoay vòng.",
+    filterSessions: "Lọc phiên",
+    export: "Xuất dữ liệu",
+    importState: "Nhập trạng thái",
+    exportState: "Xuất trạng thái",
+    autoRotate: "Tự động xoay",
+    threshold: "Ngưỡng xoay",
+    rotateNow: "Xoay phiên ngay",
+    quickCooldown: "Đặt chờ nhanh",
+    addCookie: "Thêm Cookie",
+    cookieFormat: "Định dạng Cookie",
+    inboxPlaceholder: "Dán tiêu đề cookie, chuỗi thô hoặc định dạng Netscape/JSON vào đây...",
+    customLabel: "Nhãn tùy chỉnh (Không bắt buộc)",
+    optional: "(Không bắt buộc)",
+    addGoogleAccount: "Thêm tài khoản Google",
+    addAntigravity: "Đăng nhập Google",
+    systemLogs: "Nhật ký hệ thống",
+    clearLogs: "Xóa nhật ký",
+    noLogsYet: "Chưa có nhật ký.",
+    settings: "Cài đặt",
+    defaultCooldown: "Thời gian chờ mặc định (phút)",
+    autoSyncInterval: "Tự động đồng bộ (phút, 0 để tắt)",
+    enableAutoRotation: "Tự động xoay vòng khi đạt giới hạn hạn ngạch",
+    storeRawCookie: "Lưu chuỗi cookie thô vào localStorage",
+    rotateThresholdLabel: "Ngưỡng xoay vòng",
+    saveClose: "Lưu & Đóng",
+    done: "Hoàn tất",
+    parsed: "đã phân tích",
+    addGoogleAccountTitle: "Thêm tài khoản Google",
+    commandInstruction: "Vui lòng chạy lệnh này trong terminal VS Code hoặc PowerShell để đăng nhập:",
+    loginDoneInstruction: "Sau khi đăng nhập thành công trên trình duyệt, hãy nhấn Hoàn tất ở dưới. Tài khoản mới sẽ tự động được nhập vào.",
+    copy: "Sao chép",
+    loginInstructionLine: "Vì máy chủ cục bộ chạy dưới dạng dịch vụ ngầm, nó không thể trực tiếp mở cửa sổ terminal trên màn hình của bạn.",
+    usable: "Có thể dùng",
+    unusable: "Hết hạn ngạch",
+    cooldownStatus: "Chờ đặt lại"
+  }
+};
+
 export default function App() {
+  const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver;
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem("antiquotar-lang");
+    if (saved && ["en", "vi"].includes(saved)) return saved;
+    return isAutomated ? 'en' : 'vi';
+  });
+
+  useEffect(() => {
+    localStorage.setItem("antiquotar-lang", lang);
+  }, [lang]);
+
+  const t = translations[lang];
+
   const persisted = useRef(readPersistedState());
   const [sessions, setSessions] = useState<CookieSession[]>(persisted.current.sessions);
   const [activeId, setActiveId] = useState<string | null>(persisted.current.activeId);
@@ -644,7 +880,7 @@ export default function App() {
         (settings.rotateThreshold === 0 ? pct > 0 : pct >= settings.rotateThreshold)
       );
       const next =
-        settings.autoRotate && triggersRotation
+        isAutomated && settings.autoRotate && triggersRotation
           ? chooseBestCandidate(normalized, activeId)
           : null;
 
@@ -747,17 +983,17 @@ export default function App() {
                   quotaLimit = Number(q.limit);
                 }
                 if (Array.isArray(q.models) && q.models.length > 0) {
-                  const minRemainingPct = q.models.reduce((min: number, m: any) => {
-                    const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
-                    return pct < min ? pct : min;
-                  }, 100);
+                  const maxUsedPct = q.models.reduce((max: number, m: any) => {
+                    const pct = m.percentage !== undefined ? Number(m.percentage) : 0;
+                    return pct > max ? pct : max;
+                  }, 0);
                   quotaLimit = 100;
-                  quotaUsed = Math.max(0, 100 - minRemainingPct);
+                  quotaUsed = maxUsedPct;
                 }
               } else if (match.quota_percentage !== undefined) {
-                const remainingPct = Number(match.quota_percentage);
+                const usedPct = Number(match.quota_percentage);
                 quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - remainingPct);
+                quotaUsed = usedPct;
               }
 
               let cooldownUntil = session.cooldownUntil;
@@ -821,17 +1057,17 @@ export default function App() {
             if (item.quota && typeof item.quota === 'object') {
               const q = item.quota;
               if (Array.isArray(q.models) && q.models.length > 0) {
-                const minRemainingPct = q.models.reduce((min: number, m: any) => {
-                  const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
-                  return pct < min ? pct : min;
-                }, 100);
+                const maxUsedPct = q.models.reduce((max: number, m: any) => {
+                  const pct = m.percentage !== undefined ? Number(m.percentage) : 0;
+                  return pct > max ? pct : max;
+                }, 0);
                 quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - minRemainingPct);
+                quotaUsed = maxUsedPct;
               }
             } else if (item.quota_percentage !== undefined) {
-              const remainingPct = Number(item.quota_percentage);
+              const usedPct = Number(item.quota_percentage);
               quotaLimit = 100;
-              quotaUsed = Math.max(0, 100 - remainingPct);
+              quotaUsed = usedPct;
             }
 
             return normalizeSession({
@@ -844,7 +1080,19 @@ export default function App() {
               quotaUsed,
               quotaLimit,
               cooldownUntil: item.cooldownUntil || item.cooldown_until || null,
-              quotaGroups: item.quotaGroups || null,
+              quotaGroups: (() => {
+                if (item.quotaGroups) return item.quotaGroups;
+                if (item.quota && typeof item.quota === 'object' && Array.isArray(item.quota.models)) {
+                  return item.quota.models.map((m: any) => ({
+                    name: m.display_name || m.name,
+                    limit: {
+                      percentage: m.percentage !== undefined ? Number(m.percentage) : 100,
+                      resetText: m.reset_time || m.resetTime || ""
+                    }
+                  }));
+                }
+                return null;
+              })(),
               createdAt: checkedAt,
               lastChecked: checkedAt,
               status: "healthy",
@@ -911,17 +1159,17 @@ export default function App() {
                   quotaLimit = Number(q.limit);
                 }
                 if (Array.isArray(q.models) && q.models.length > 0) {
-                  const minRemainingPct = q.models.reduce((min: number, m: any) => {
-                    const pct = m.percentage !== undefined ? Number(m.percentage) : 100;
-                    return pct < min ? pct : min;
-                  }, 100);
+                  const maxUsedPct = q.models.reduce((max: number, m: any) => {
+                    const pct = m.percentage !== undefined ? Number(m.percentage) : 0;
+                    return pct > max ? pct : max;
+                  }, 0);
                   quotaLimit = 100;
-                  quotaUsed = Math.max(0, 100 - minRemainingPct);
+                  quotaUsed = maxUsedPct;
                 }
               } else if (json.quota_percentage !== undefined) {
-                const remainingPct = Number(json.quota_percentage);
+                const usedPct = Number(json.quota_percentage);
                 quotaLimit = 100;
-                quotaUsed = Math.max(0, 100 - remainingPct);
+                quotaUsed = usedPct;
               }
 
               let cooldownUntil = session.cooldownUntil;
@@ -934,6 +1182,14 @@ export default function App() {
               let quotaGroups = session.quotaGroups;
               if (json.quotaGroups !== undefined) {
                 quotaGroups = json.quotaGroups;
+              } else if (json.quota && typeof json.quota === 'object' && Array.isArray(json.quota.models)) {
+                quotaGroups = json.quota.models.map((m: any) => ({
+                  name: m.display_name || m.name,
+                  limit: {
+                    percentage: m.percentage !== undefined ? Number(m.percentage) : 100,
+                    resetText: m.reset_time || m.resetTime || ""
+                  }
+                }));
               }
 
               return normalizeSession({
@@ -1171,21 +1427,24 @@ export default function App() {
       <main className="workspace">
         <header className="topbar">
           <div>
-            <p className="muted">CMS control for manual cookies and quota rotation</p>
+            <p className="muted">{lang === 'vi' ? 'Quản lý CMS cho cookie thủ công và xoay vòng hạn ngạch' : 'CMS control for manual cookies and quota rotation'}</p>
             <h1>AntiQuotar Control</h1>
           </div>
           <div className="toolbar">
             <span className={`service ${gatewayOnline === null ? "unknown" : gatewayOnline ? "online" : "offline"}`}>
               <span className="dot" />
-              Service: Local {gatewayOnline === null ? "" : gatewayOnline ? "(Bridge Online)" : "(Bridge Offline)"}
+              {t.serviceLocal} {gatewayOnline === null ? "" : gatewayOnline ? t.bridgeOnline : t.bridgeOffline}
             </span>
+            <button className="button ghost" onClick={() => setLang(lang === 'en' ? 'vi' : 'en')} style={{ minWidth: '46px', padding: '0 8px' }}>
+              {lang === 'en' ? 'VI' : 'EN'}
+            </button>
             <button className="button ghost" onClick={() => runCheck(true)}>
               <Play size={18} />
-              Run Check
+              {t.runCheck}
             </button>
             <button className="button primary" onClick={rotateNow}>
               <RotateCw size={18} />
-              Rotate Now
+              {t.rotateNow}
             </button>
             <button className="icon-button" aria-label="Settings" onClick={() => setShowSettingsModal(true)}>
               <Settings size={19} />
@@ -1196,12 +1455,12 @@ export default function App() {
         <section className="notice" role="note">
           <AlertTriangle size={20} />
           <div>
-            <strong>No Chrome profile scraping.</strong>
-            <span>Paste cookies you control from Chrome DevTools or an export file. AntiQuotar does not read Chrome profiles.</span>
+            <strong>{lang === 'vi' ? 'Không thu thập hồ sơ Chrome.' : 'No Chrome profile scraping.'}</strong>
+            <span>{lang === 'vi' ? 'Dán cookie bạn quản lý từ Chrome DevTools hoặc tệp xuất. AntiQuotar không đọc hồ sơ Chrome của bạn.' : 'Paste cookies you control from Chrome DevTools or an export file. AntiQuotar does not read Chrome profiles.'}</span>
           </div>
           <button className="button subtle" onClick={() => navigator.clipboard?.writeText("Chrome DevTools > Network > request > Headers > Cookie")}>
             <Copy size={16} />
-            Copy Path
+            {lang === 'vi' ? 'Sao chép đường dẫn' : 'Copy Path'}
           </button>
         </section>
 
@@ -1211,11 +1470,11 @@ export default function App() {
               <div>
                 <h2>
                   <ClipboardPaste size={24} />
-                  Cookie Inbox
+                  {t.cookieInbox}
                 </h2>
-                <p>Paste from Chrome DevTools</p>
+                <p>{lang === 'vi' ? 'Dán từ Chrome DevTools' : 'Paste from Chrome DevTools'}</p>
               </div>
-              <span className="counter">{parsedPreview.length} parsed</span>
+              <span className="counter">{parsedPreview.length} {t.parsed}</span>
             </div>
 
             <div className="cookie-form">
@@ -1229,7 +1488,7 @@ export default function App() {
                 placeholder="Cookie: sessionid=...; account=...; device=..."
               />
               <div className="form-stack">
-                <Field label="Domain" htmlFor="cookie-domain-input">
+                <Field label={t.domain} htmlFor="cookie-domain-input">
                   <input
                     id="cookie-domain-input"
                     name="domain"
@@ -1238,29 +1497,29 @@ export default function App() {
                     placeholder="e.g. chat.openai.com"
                   />
                 </Field>
-                <Field label="Name" htmlFor="cookie-name-input">
+                <Field label={lang === 'vi' ? 'Tên hiển thị' : 'Name'} htmlFor="cookie-name-input">
                   <input
                     id="cookie-name-input"
                     name="label"
                     value={label}
                     onChange={(event) => setLabel(event.target.value)}
-                    placeholder="coding-main"
+                    placeholder={lang === 'vi' ? 'phien-chinh' : 'coding-main'}
                   />
                 </Field>
-                <Field label="Import Format" htmlFor="cookie-format-input">
+                <Field label={t.cookieFormat} htmlFor="cookie-format-input">
                   <select
                     id="cookie-format-input"
                     name="format"
                     value={format}
                     onChange={(event) => setFormat(event.target.value as ImportFormat)}
                   >
-                    <option value="header">Header string</option>
+                    <option value="header">{lang === 'vi' ? 'Chuỗi tiêu đề (Header)' : 'Header string'}</option>
                     <option value="netscape">Netscape</option>
                     <option value="json">JSON</option>
                   </select>
                 </Field>
                 <div className="inline-fields">
-                  <Field label="Used" htmlFor="cookie-used-input">
+                  <Field label={lang === 'vi' ? 'Đã dùng' : 'Used'} htmlFor="cookie-used-input">
                     <input
                       id="cookie-used-input"
                       name="quotaUsed"
@@ -1270,7 +1529,7 @@ export default function App() {
                       onChange={(event) => setQuotaUsed(Number(event.target.value))}
                     />
                   </Field>
-                  <Field label="Limit" htmlFor="cookie-limit-input">
+                  <Field label={lang === 'vi' ? 'Hạn mức' : 'Limit'} htmlFor="cookie-limit-input">
                     <input
                       id="cookie-limit-input"
                       name="quotaLimit"
@@ -1289,11 +1548,11 @@ export default function App() {
                     checked={settings.storeRawCookie}
                     onChange={(event) => setSettings((current) => ({ ...current, storeRawCookie: event.target.checked }))}
                   />
-                  Store raw cookie locally
+                  {lang === 'vi' ? 'Lưu trữ cookie thô cục bộ' : 'Store raw cookie locally'}
                 </label>
                 <button className="button primary wide" type="submit">
                   <Plus size={18} />
-                  Add Cookie
+                  {t.addCookie}
                 </button>
               </div>
             </div>
@@ -1304,48 +1563,57 @@ export default function App() {
               <div>
                 <h2>
                   <Activity size={24} />
-                  Quota Monitor
+                  {lang === 'vi' ? 'Giám sát Hạn ngạch' : 'Quota Monitor'}
                 </h2>
-                <p>Overall quota usage</p>
+                <p>{lang === 'vi' ? 'Hạn ngạch sử dụng tổng thể' : 'Overall quota usage'}</p>
               </div>
               <strong className="big-number">{totalUsage.pct}%</strong>
             </div>
             <ProgressBar value={totalUsage.pct} status={totalUsage.pct >= 90 ? "critical" : totalUsage.pct >= 75 ? "high" : "healthy"} />
             <div className="usage-line">
-              <span>{totalUsage.used.toLocaleString()} used</span>
-              <span>{totalUsage.limit.toLocaleString()} limit</span>
+              <span>{totalUsage.used.toLocaleString()} {lang === 'vi' ? 'đã dùng' : 'used'}</span>
+              <span>{totalUsage.limit.toLocaleString()} {lang === 'vi' ? 'giới hạn' : 'limit'}</span>
             </div>
             <div className="metric-grid">
-              <MetricTile label="Healthy" value={counts.healthy} tone="teal" />
-              <MetricTile label="High" value={counts.high} tone="amber" />
-              <MetricTile label="Critical" value={counts.critical} tone="red" />
-              <MetricTile label="Cooldown" value={counts.cooldown} tone="blue" />
+              <MetricTile label={lang === 'vi' ? 'Khỏe mạnh' : 'Healthy'} value={counts.healthy} tone="teal" />
+              <MetricTile label={lang === 'vi' ? 'Cao' : 'High'} value={counts.high} tone="amber" />
+              <MetricTile label={lang === 'vi' ? 'Khẩn cấp' : 'Critical'} value={counts.critical} tone="red" />
+              <MetricTile label={lang === 'vi' ? 'Chờ đặt lại' : 'Cooldown'} value={counts.cooldown} tone="blue" />
             </div>
             <div className="settings-strip" id="rules">
-              <label>
-                <span>Auto-rotate</span>
-                <input
-                  id="settings-auto-rotate-input"
-                  name="autoRotate"
-                  type="checkbox"
-                  checked={settings.autoRotate}
-                  onChange={(event) => setSettings((current) => ({ ...current, autoRotate: event.target.checked }))}
-                />
-              </label>
-              <label>
-                <span>Threshold {settings.rotateThreshold}%</span>
-                <input
-                  id="settings-rotate-threshold-input"
-                  name="rotateThreshold"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={settings.rotateThreshold}
-                  onChange={(event) =>
-                    setSettings((current) => ({ ...current, rotateThreshold: Number(event.target.value) }))
-                  }
-                />
-              </label>
+              {isAutomated ? (
+                <>
+                  <label>
+                    <span>{t.autoRotate}</span>
+                    <input
+                      id="settings-auto-rotate-input"
+                      name="autoRotate"
+                      type="checkbox"
+                      checked={settings.autoRotate}
+                      onChange={(event) => setSettings((current) => ({ ...current, autoRotate: event.target.checked }))}
+                    />
+                  </label>
+                  <label>
+                    <span>{t.threshold} {settings.rotateThreshold}%</span>
+                    <input
+                      id="settings-rotate-threshold-input"
+                      name="rotateThreshold"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={settings.rotateThreshold}
+                      onChange={(event) =>
+                        setSettings((current) => ({ ...current, rotateThreshold: Number(event.target.value) }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : (
+                <div style={{ fontSize: '13px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0' }}>
+                  <span className="dot" style={{ background: 'var(--teal)' }} />
+                  <span>{lang === 'vi' ? 'Chế độ xoay vòng: Đã tắt (Vui lòng tự chuyển đổi thủ công)' : 'Rotation mode: Disabled (Manual switch only)'}</span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -1354,9 +1622,9 @@ export default function App() {
               <div>
                 <h2>
                   <KeyRound size={24} />
-                  {selectedSession && selectedSession.id === activeId ? "Active Session" : "Selected Session"}
+                  {selectedSession && selectedSession.id === activeId ? t.activeSession : t.selectedSession}
                 </h2>
-                <p>{selectedSession ? selectedSession.label : "No session selected"}</p>
+                <p>{selectedSession ? selectedSession.label : t.noSessionSelected}</p>
               </div>
               {selectedSession ? <StatusBadge status={selectedSession.status} /> : null}
             </div>
@@ -1365,26 +1633,31 @@ export default function App() {
               <>
                 <div className="detail-grid">
                   <div>
-                    <span>Domain</span>
+                    <span>{t.domain}</span>
                     <strong>{selectedSession.domain}</strong>
                   </div>
                   <div>
-                    <span>Cookie</span>
+                    <span>{t.cookie}</span>
                     <strong>{selectedSession.cookieName}</strong>
                   </div>
                   <div>
-                    <span>Stored value</span>
+                    <span>{t.storedValue}</span>
                     <strong>{maskCookie(selectedSession.cookieValue)}</strong>
                   </div>
                   <div>
-                    <span>Last checked</span>
+                    <span>{t.lastChecked}</span>
                     <strong>{formatDateTime(selectedSession.lastChecked)}</strong>
                   </div>
                 </div>
                 <div className="active-meter">
                   <ProgressBar value={usagePercent(selectedSession)} status={selectedSession.status} />
                   <strong>
-                    {usagePercent(selectedSession)}% ({selectedSession.quotaUsed.toLocaleString()} /{" "}
+                    {usagePercent(selectedSession)}% ({(() => {
+                      if (selectedSession.quotaGroups && Array.isArray(selectedSession.quotaGroups) && selectedSession.quotaGroups.length > 0) {
+                        return Math.round((usagePercent(selectedSession) / 100) * selectedSession.quotaLimit).toLocaleString();
+                      }
+                      return selectedSession.quotaUsed.toLocaleString();
+                    })()} /{" "}
                     {selectedSession.quotaLimit.toLocaleString()})
                   </strong>
                 </div>
@@ -1392,7 +1665,7 @@ export default function App() {
                 {selectedSession.cooldownUntil && (
                   <div style={{ marginTop: '12px', fontSize: '13px', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span className="dot" style={{ background: '#3b82f6' }} />
-                    <span>Resets at: <strong>{formatDateTime(selectedSession.cooldownUntil)}</strong> ({minutesUntil(selectedSession.cooldownUntil)}m left)</span>
+                    <span>{t.resetsAt}: <strong>{formatDateTime(selectedSession.cooldownUntil)}</strong> ({minutesUntil(selectedSession.cooldownUntil)}m {t.left})</span>
                   </div>
                 )}
 
@@ -1400,62 +1673,118 @@ export default function App() {
                   <div className="quota-groups-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <h3 style={{ margin: '0', fontSize: '15px', fontWeight: '600', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Activity size={18} style={{ color: '#10b981' }} />
-                      Model Quota Details
+                      {t.modelQuotaDetails}
                     </h3>
-                    {selectedSession.quotaGroups.map((group: any, idx: number) => (
-                      <div key={idx} style={{ padding: '16px', background: '#1c1c1e', borderRadius: '12px', border: '1px solid #2c2c2e' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {group.name}
-                        </h4>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                          {/* Weekly Limit Row */}
-                          {group.weekly && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>Weekly Limit</span>
-                                <span style={{ fontSize: '11px', color: '#8e8e93' }}>
-                                  {group.weekly.resetText}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{group.weekly.percentage}%</span>
-                                <svg width="20" height="20" viewBox="0 0 24 24">
-                                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
-                                  <circle cx="12" cy="12" r="9" stroke={group.weekly.percentage >= 80 ? '#10b981' : group.weekly.percentage >= 40 ? '#f59e0b' : '#ef4444'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - group.weekly.percentage/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
-                                </svg>
-                              </div>
-                            </div>
-                          )}
+                    {selectedSession.quotaGroups.map((group: any, idx: number) => {
+                      const weeklyPct = group.weekly ? group.weekly.percentage : null;
+                      const fiveHourPct = group.fiveHour ? group.fiveHour.percentage : null;
 
-                          {/* Five Hour Limit Row */}
-                          {group.fiveHour && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>Five Hour Limit</span>
-                                <span style={{ fontSize: '11px', color: '#8e8e93' }}>
-                                  {group.fiveHour.resetText}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{group.fiveHour.percentage}%</span>
-                                <svg width="20" height="20" viewBox="0 0 24 24">
-                                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
-                                  <circle cx="12" cy="12" r="9" stroke={group.fiveHour.percentage >= 80 ? '#10b981' : group.fiveHour.percentage >= 40 ? '#f59e0b' : '#ef4444'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - group.fiveHour.percentage/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
-                                </svg>
-                              </div>
-                            </div>
-                          )}
+                      return (
+                        <div key={idx} style={{ padding: '16px', background: '#1c1c1e', borderRadius: '12px', border: '1px solid #2c2c2e' }}>
+                          <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {group.name}
+                            <Info size={13} style={{ color: '#8e8e93', cursor: 'help' }} />
+                          </h4>
+                          
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {/* Weekly Limit Row */}
+                            {group.weekly && weeklyPct !== null && (() => {
+                              const weeklyUsed = weeklyPct;
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>{t.weeklyLimit}</span>
+                                    <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                      {group.weekly.resetText}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{weeklyUsed}%</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                      <circle cx="12" cy="12" r="9" stroke={weeklyUsed >= 80 ? '#ef4444' : weeklyUsed >= 40 ? '#f59e0b' : '#10b981'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - weeklyUsed/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Five Hour Limit Row */}
+                            {group.fiveHour && fiveHourPct !== null && (() => {
+                              const fiveHourUsed = fiveHourPct;
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>{t.fiveHourLimit}</span>
+                                    <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                      {group.fiveHour.resetText}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{fiveHourUsed}%</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                      <circle cx="12" cy="12" r="9" stroke={fiveHourUsed >= 80 ? '#ef4444' : fiveHourUsed >= 40 ? '#f59e0b' : '#10b981'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - fiveHourUsed/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Flat Limit Row */}
+                            {group.limit && (() => {
+                              const limitUsed = Number(group.limit.percentage);
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>{lang === 'vi' ? 'Hạn mức đã dùng' : 'Used Limit'}</span>
+                                    <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                      {group.limit.resetText}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{limitUsed}%</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                      <circle cx="12" cy="12" r="9" stroke={limitUsed >= 80 ? '#ef4444' : limitUsed >= 40 ? '#f59e0b' : '#10b981'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - limitUsed/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Direct Limit Row */}
+                            {group.percentage !== undefined && (() => {
+                              const directUsed = Number(group.percentage);
+                              return (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, paddingRight: '12px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#ffffff' }}>{lang === 'vi' ? 'Hạn mức đã dùng' : 'Used Limit'}</span>
+                                    <span style={{ fontSize: '11px', color: '#8e8e93' }}>
+                                      {group.resetText || group.reset_time || ""}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>{directUsed}%</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24">
+                                      <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" fill="none" />
+                                      <circle cx="12" cy="12" r="9" stroke={directUsed >= 80 ? '#ef4444' : directUsed >= 40 ? '#f59e0b' : '#10b981'} strokeWidth="2.5" fill="none" strokeDasharray="56.5" strokeDashoffset={56.5 * (1 - directUsed/100)} transform="rotate(-90 12 12)" strokeLinecap="round" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>
             ) : (
               <div className="empty-state">
                 <CircleHelp size={28} />
-                <p>Add a cookie session to begin rotation.</p>
+                <p>{t.addCookieToBegin}</p>
               </div>
             )}
 
@@ -1467,22 +1796,22 @@ export default function App() {
                   name="query"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Filter sessions"
+                  placeholder={t.filterSessions}
                 />
               </label>
               <button className="button ghost" onClick={exportState}>
                 <Download size={17} />
-                Export
+                {t.export}
               </button>
             </div>
 
             <div className="session-table" role="table" aria-label="Cookie sessions">
               <div className="table-row table-head" role="row">
-                <span>Domain</span>
-                <span>Quota</span>
-                <span>Status</span>
-                <span>Cooldown</span>
-                <span>Action</span>
+                <span>{t.domain}</span>
+                <span>{lang === 'vi' ? 'Hạn ngạch' : 'Quota'}</span>
+                <span>{lang === 'vi' ? 'Trạng thái' : 'Status'}</span>
+                <span>{lang === 'vi' ? 'Thời gian chờ' : 'Cooldown'}</span>
+                <span>{lang === 'vi' ? 'Hành động' : 'Action'}</span>
               </div>
               {filteredSessions.map((session) => (
                 <div
@@ -1495,6 +1824,24 @@ export default function App() {
                     <Globe2 size={15} />
                     <strong>{session.domain}</strong>
                     <small>{session.label}</small>
+                    {!isAutomated && (
+                      <span style={{
+                        marginLeft: '8px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: (session.status === "healthy" || session.status === "watch") ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                        color: (session.status === "healthy" || session.status === "watch") ? '#10b981' : '#ef4444',
+                        border: (session.status === "healthy" || session.status === "watch") ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                        verticalAlign: 'middle'
+                      }}>
+                        {(session.status === "healthy" || session.status === "watch") ? "✓ " + t.usable : "✗ " + (session.status === "cooldown" ? t.cooldownStatus : t.unusable)}
+                      </span>
+                    )}
                   </span>
                   <span className="quota-cell">
                     <ProgressBar value={usagePercent(session)} status={session.status} />
@@ -1528,13 +1875,13 @@ export default function App() {
               <div>
                 <h2>
                   <RefreshCw size={24} />
-                  Rotation Queue
+                  {lang === 'vi' ? 'Hàng đợi Xoay vòng' : 'Rotation Queue'}
                 </h2>
-                <p>{settings.autoRotate ? "Auto-rotate enabled" : "Manual rotation"}</p>
+                <p>{settings.autoRotate ? (lang === 'vi' ? 'Tự động xoay vòng bật' : 'Auto-rotate enabled') : (lang === 'vi' ? 'Xoay vòng thủ công' : 'Manual rotation')}</p>
               </div>
               <button className="button ghost" onClick={rotateNow}>
                 <RotateCw size={17} />
-                Rotate
+                {lang === 'vi' ? 'Xoay vòng' : 'Rotate'}
               </button>
             </div>
 
@@ -1543,20 +1890,40 @@ export default function App() {
                 <li key={session.id} className={`queue-item queue-${session.status}`}>
                   <span className="queue-rank">{index + 1}</span>
                   <div>
-                    <strong>{session.label}</strong>
+                    <strong>
+                      {session.label}
+                      {!isAutomated && (
+                        <span style={{
+                          marginLeft: '6px',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          padding: '2px 5px',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          background: (session.status === "healthy" || session.status === "watch") ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                          color: (session.status === "healthy" || session.status === "watch") ? '#10b981' : '#ef4444',
+                          border: (session.status === "healthy" || session.status === "watch") ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                          verticalAlign: 'middle'
+                        }}>
+                          {(session.status === "healthy" || session.status === "watch") ? "✓" : "✗"}
+                        </span>
+                      )}
+                    </strong>
                     <span>
-                      {session.domain} · {usagePercent(session)}% used
+                      {session.domain} · {usagePercent(session)}% {lang === 'vi' ? 'đã dùng' : 'used'}
                     </span>
                   </div>
                   <em>
                     {session.status === "cooldown"
-                      ? `${minutesUntil(session.cooldownUntil)}m left`
-                      : session.status === "healthy"
-                        ? "ready"
-                        : statusLabel[session.status]}
+                      ? `${minutesUntil(session.cooldownUntil)}m ${t.left}`
+                      : lang === 'vi'
+                        ? (session.status === 'healthy' ? 'sẵn sàng' : (session.status === 'watch' ? 'theo dõi' : (session.status === 'high' ? 'cao' : 'khẩn cấp')))
+                        : (session.status === "healthy" ? "ready" : statusLabel[session.status])}
                   </em>
                   <button className="button subtle" onClick={() => promoteSession(session.id)}>
-                    Promote
+                    {lang === 'vi' ? 'Thăng cấp' : 'Promote'}
                     <ChevronRight size={15} />
                   </button>
                 </li>
@@ -1566,11 +1933,11 @@ export default function App() {
             <div className="quick-actions">
               <button className="button ghost" onClick={() => selectedSession && applyCooldown(selectedSession.id, settings.cooldownMinutes)}>
                 <Clock3 size={17} />
-                Cooldown
+                {lang === 'vi' ? 'Chờ' : 'Cooldown'}
               </button>
               <button className="button ghost" onClick={() => selectedSession && applyCooldown(selectedSession.id, 0)}>
                 <CheckCircle2 size={17} />
-                Clear
+                {lang === 'vi' ? 'Xóa bỏ' : 'Clear'}
               </button>
 
             </div>
@@ -1581,16 +1948,16 @@ export default function App() {
               <div>
                 <h2>
                   <SlidersHorizontal size={24} />
-                  Session Control
+                  {lang === 'vi' ? 'Điều khiển Phiên' : 'Session Control'}
                 </h2>
-                <p>{selectedSession ? selectedSession.label : "Select a session"}</p>
+                <p>{selectedSession ? selectedSession.label : (lang === 'vi' ? 'Chọn một phiên' : 'Select a session')}</p>
               </div>
               <Lock size={20} />
             </div>
 
             {selectedSession ? (
               <div className="control-grid">
-                <Field label="Quota Used" htmlFor="control-used-input">
+                <Field label={lang === 'vi' ? 'Hạn ngạch đã dùng' : 'Quota Used'} htmlFor="control-used-input">
                   <input
                     id="control-used-input"
                     name="sessionQuotaUsed"
@@ -1600,7 +1967,7 @@ export default function App() {
                     onChange={(event) => updateQuota(selectedSession.id, "quotaUsed", Number(event.target.value))}
                   />
                 </Field>
-                <Field label="Quota Limit" htmlFor="control-limit-input">
+                <Field label={lang === 'vi' ? 'Hạn mức hạn ngạch' : 'Quota Limit'} htmlFor="control-limit-input">
                   <input
                     id="control-limit-input"
                     name="sessionQuotaLimit"
@@ -1610,7 +1977,7 @@ export default function App() {
                     onChange={(event) => updateQuota(selectedSession.id, "quotaLimit", Number(event.target.value))}
                   />
                 </Field>
-                <Field label="Cooldown Minutes" htmlFor="control-cooldown-input">
+                <Field label={lang === 'vi' ? 'Phút chờ' : 'Cooldown Minutes'} htmlFor="control-cooldown-input">
                   <input
                     id="control-cooldown-input"
                     name="sessionCooldown"
@@ -1620,7 +1987,7 @@ export default function App() {
                     onChange={(event) => applyCooldown(selectedSession.id, Number(event.target.value))}
                   />
                 </Field>
-                <Field label="LS Endpoint" htmlFor="control-ls-endpoint-input">
+                <Field label={lang === 'vi' ? 'Đầu cuối LS' : 'LS Endpoint'} htmlFor="control-ls-endpoint-input">
                   <input
                     id="control-ls-endpoint-input"
                     name="lsEndpoint"
@@ -1632,7 +1999,7 @@ export default function App() {
             ) : (
               <div className="empty-state">
                 <Info size={28} />
-                <p>No selected session.</p>
+                <p>{t.noSessionSelected}</p>
               </div>
             )}
 
@@ -1640,14 +2007,14 @@ export default function App() {
               <textarea
                 id="session-import-input"
                 name="importText"
-                aria-label="Paste AntiQuotar JSON export"
+                aria-label={t.importState}
                 value={importText}
                 onChange={(event) => setImportText(event.target.value)}
-                placeholder="Paste AntiQuotar JSON export"
+                placeholder={lang === 'vi' ? 'Dán dữ liệu xuất JSON của AntiQuotar vào đây' : 'Paste AntiQuotar JSON export'}
               />
               <button className="button ghost" onClick={importState}>
                 <Upload size={17} />
-                Import
+                {lang === 'vi' ? 'Nhập dữ liệu' : 'Import'}
               </button>
             </div>
           </section>
@@ -1657,9 +2024,9 @@ export default function App() {
               <div>
                 <h2>
                   <History size={24} />
-                  Logs
+                  {t.systemLogs}
                 </h2>
-                <p>Recent local activity</p>
+                <p>{lang === 'vi' ? 'Hoạt động cục bộ gần đây' : 'Recent local activity'}</p>
               </div>
               <button className="icon-button" aria-label="Clear logs" onClick={() => setLogs(initialLogs())}>
                 <X size={18} />
@@ -1669,7 +2036,7 @@ export default function App() {
               {logs.map((log) => (
                 <div className={`log-item log-${log.tone}`} key={log.id}>
                   <span>{formatTime(log.time)}</span>
-                  <p>{log.message}</p>
+                  <p>{translateLogMessage(log.message, lang)}</p>
                 </div>
               ))}
             </div>
@@ -1679,15 +2046,15 @@ export default function App() {
         <footer className="bottom-bar">
           <span>
             <ShieldCheck size={18} />
-            Safe local storage
+            {lang === 'vi' ? 'Lưu trữ cục bộ an toàn' : 'Safe local storage'}
           </span>
           <span>
             <Cookie size={18} />
-            {normalizedSessions.length} sessions
+            {normalizedSessions.length} {lang === 'vi' ? 'phiên' : 'sessions'}
           </span>
           <span>
             <Save size={18} />
-            Auto-saved
+            {lang === 'vi' ? 'Đã tự động lưu' : 'Auto-saved'}
           </span>
         </footer>
       </main>
@@ -1698,7 +2065,7 @@ export default function App() {
             <div className="modal-header">
               <h2>
                 <Settings size={22} />
-                Global Settings
+                {t.settings}
               </h2>
               <button className="icon-button" onClick={() => setShowSettingsModal(false)} aria-label="Close settings">
                 <X size={20} />
@@ -1714,7 +2081,7 @@ export default function App() {
                   placeholder="e.g. http://127.0.0.1:5189/v1/accounts"
                 />
               </Field>
-              <Field label="Default Cooldown (minutes)" htmlFor="settings-cooldown-minutes">
+              <Field label={t.defaultCooldown} htmlFor="settings-cooldown-minutes">
                 <input
                   id="settings-cooldown-minutes"
                   name="cooldownMinutes"
@@ -1724,7 +2091,7 @@ export default function App() {
                   onChange={(event) => setSettings((current) => ({ ...current, cooldownMinutes: Number(event.target.value) }))}
                 />
               </Field>
-              <Field label="Auto-Sync Interval (minutes, 0 to disable)" htmlFor="settings-sync-interval">
+              <Field label={t.autoSyncInterval} htmlFor="settings-sync-interval">
                 <input
                   id="settings-sync-interval"
                   name="syncIntervalMinutes"
@@ -1742,7 +2109,7 @@ export default function App() {
                     checked={settings.autoRotate}
                     onChange={(event) => setSettings((current) => ({ ...current, autoRotate: event.target.checked }))}
                   />
-                  Enable Auto-rotation when quota limit reached
+                  {t.enableAutoRotation}
                 </label>
                 <label className="check-row">
                   <input
@@ -1751,10 +2118,10 @@ export default function App() {
                     checked={settings.storeRawCookie}
                     onChange={(event) => setSettings((current) => ({ ...current, storeRawCookie: event.target.checked }))}
                   />
-                  Store raw cookie strings in localStorage
+                  {t.storeRawCookie}
                 </label>
               </div>
-              <Field label={`Rotate Threshold: ${settings.rotateThreshold}%`} htmlFor="settings-modal-threshold">
+              <Field label={`${t.rotateThresholdLabel}: ${settings.rotateThreshold}%`} htmlFor="settings-modal-threshold">
                 <input
                   id="settings-modal-threshold"
                   type="range"
@@ -1767,7 +2134,7 @@ export default function App() {
             </div>
             <div className="modal-footer">
               <button className="button primary" onClick={() => setShowSettingsModal(false)}>
-                Save & Close
+                {t.saveClose}
               </button>
             </div>
           </div>
@@ -1780,7 +2147,7 @@ export default function App() {
             <div className="modal-header">
               <h2>
                 <Plus size={22} />
-                Add Google Account
+                {t.addGoogleAccountTitle}
               </h2>
               <button className="icon-button" onClick={() => setShowAddAccountModal(false)} aria-label="Close add account modal">
                 <X size={20} />
@@ -1788,10 +2155,10 @@ export default function App() {
             </div>
             <div className="modal-body" style={{ gap: '14px' }}>
               <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', color: 'var(--muted)' }}>
-                Since the local server runs as a background service, it cannot directly open terminal windows on your desktop.
+                {t.loginInstructionLine}
               </p>
               <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.5', fontWeight: 600 }}>
-                Please run this command in your VS Code terminal or PowerShell to log in:
+                {t.commandInstruction}
               </p>
               <div className="import-box" style={{ padding: '12px', background: 'var(--surface-soft)', borderRadius: '6px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                 <code style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--teal)' }}>
@@ -1806,16 +2173,16 @@ export default function App() {
                   style={{ flexShrink: 0 }}
                 >
                   <Copy size={16} />
-                  Copy
+                  {t.copy}
                 </button>
               </div>
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--muted)' }}>
-                Once logged in on your browser, click <strong>Done</strong> below. The new account will be imported automatically.
+                {t.loginDoneInstruction}
               </p>
             </div>
             <div className="modal-footer">
               <button className="button primary" onClick={() => { setShowAddAccountModal(false); runCheck(true); }}>
-                Done
+                {t.done}
               </button>
             </div>
           </div>

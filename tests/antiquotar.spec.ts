@@ -538,13 +538,13 @@ test.describe('Tier 1: Feature Coverage', () => {
               quotaGroups: [
                 {
                   name: 'Gemini Models',
-                  weekly: { percentage: 86, resetText: 'Weekly Limit 86%' },
-                  fiveHour: { percentage: 19, resetText: 'Five Hour Limit 19%' }
+                  weekly: { percentage: 14, resetText: 'Weekly Limit 86%' },
+                  fiveHour: { percentage: 81, resetText: 'Five Hour Limit 19%' }
                 },
                 {
                   name: 'Claude and GPT models',
-                  weekly: { percentage: 29, resetText: 'Weekly Limit 29%' },
-                  fiveHour: { percentage: 100, resetText: '' }
+                  weekly: { percentage: 71, resetText: 'Weekly Limit 29%' },
+                  fiveHour: { percentage: 0, resetText: '' }
                 }
               ]
             },
@@ -571,11 +571,11 @@ test.describe('Tier 1: Feature Coverage', () => {
     // Verify detailed progress rings are rendered correctly
     await expect(page.locator('.quota-groups-list')).toBeVisible();
     await expect(page.locator('.quota-groups-list')).toContainText('Gemini Models');
-    await expect(page.locator('.quota-groups-list')).toContainText('86%');
-    await expect(page.locator('.quota-groups-list')).toContainText('19%');
+    await expect(page.locator('.quota-groups-list')).toContainText('14%');
+    await expect(page.locator('.quota-groups-list')).toContainText('81%');
     await expect(page.locator('.quota-groups-list')).toContainText('Claude and GPT models');
-    await expect(page.locator('.quota-groups-list')).toContainText('29%');
-    await expect(page.locator('.quota-groups-list')).toContainText('100%');
+    await expect(page.locator('.quota-groups-list')).toContainText('71%');
+    await expect(page.locator('.quota-groups-list')).toContainText('0%');
 
     // Trigger active session switch by clicking "Rotate Now"
     await page.click('button:has-text("Rotate Now")');
@@ -820,7 +820,7 @@ test.describe('Tier 2: Boundary & Corner Cases', () => {
     await page.click('button:has-text("Run Check")');
 
     const log = page.locator('.log-list .log-item p').first();
-    await expect(log).toContainText('LS Gateway connection failed:');
+    await expect(log).toContainText('LS Gateway offline — run "AntiQuotar.bat ls" to start it.');
   });
 
   test('38. LS Gateway API returns malformed JSON payload logs parsing warning', async ({ page }) => {
@@ -838,7 +838,7 @@ test.describe('Tier 2: Boundary & Corner Cases', () => {
     await page.click('button:has-text("Run Check")');
 
     const log = page.locator('.log-list .log-item p').first();
-    await expect(log).toContainText('LS Gateway connection failed:');
+    await expect(log).toContainText('LS Gateway offline — run "AntiQuotar.bat ls" to start it.');
   });
 
   test('39. Corrupted localStorage state handles gracefully on reload', async ({ page }) => {
@@ -1066,7 +1066,7 @@ test.describe('Tier 4: Real-World Scenarios', () => {
       expect(logs.some(l => l.includes('Synchronized 1 session(s) from LS Gateway.'))).toBeTruthy();
     }).toPass();
 
-    const quotaCell = page.locator('.session-table .table-row:not(.table-head)').filter({ hasText: 'S1' }).locator('.quota-cell');
+    const quotaCell = page.locator('.session-table .table-row:not(.table-head)').filter({ has: page.locator('small', { hasText: /^S1$/ }) }).locator('.quota-cell');
     await expect(quotaCell).toContainText('50%');
   });
 
@@ -1148,13 +1148,13 @@ test.describe('Tier 4: Real-World Scenarios', () => {
               quotaGroups: [
                 {
                   name: 'Gemini Models',
-                  weekly: { percentage: 100, resetText: '' },
-                  fiveHour: { percentage: 89, resetText: 'Five Hour Limit 89%' }
+                  weekly: { percentage: 0, resetText: '' },
+                  fiveHour: { percentage: 11, resetText: 'Five Hour Limit 89%' }
                 },
                 {
                   name: 'Claude and GPT models',
-                  weekly: { percentage: 8, resetText: 'Weekly Limit 8%' },
-                  fiveHour: { percentage: 100, resetText: '' }
+                  weekly: { percentage: 92, resetText: 'Weekly Limit 8%' },
+                  fiveHour: { percentage: 0, resetText: '' }
                 }
               ]
             }
@@ -1174,11 +1174,12 @@ test.describe('Tier 4: Real-World Scenarios', () => {
     await expect(page.locator('.quota-groups-list')).toBeVisible();
     await expect(page.locator('.quota-groups-list')).toContainText('Gemini Models');
     
-    // Gemini Weekly should fallback to 89% (from 5-hour) since it was 100%
-    // Claude 5-hour should fallback to 8% (from Weekly) since it was 100%
-    await expect(page.locator('.quota-groups-list')).toContainText('89%');
+    // Gemini Weekly should be 0% used, 5-hour should be 11% used
+    // Claude Weekly should be 92% used, 5-hour should be 0% used
+    await expect(page.locator('.quota-groups-list')).toContainText('0%');
+    await expect(page.locator('.quota-groups-list')).toContainText('11%');
     await expect(page.locator('.quota-groups-list')).toContainText('Claude and GPT models');
-    await expect(page.locator('.quota-groups-list')).toContainText('8%');
+    await expect(page.locator('.quota-groups-list')).toContainText('92%');
   });
 
   test('51. Scenario 7 (Interactive promotion, filesystem/credentials sync, and no login prompt)', async ({ page }) => {

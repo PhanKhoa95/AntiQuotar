@@ -110,36 +110,45 @@ if not "%~1"=="" (
 :menu
 cls
 call :banner
-echo Workspace : %ROOT%
-echo Tools     : %TOOLS_DIR%
-echo LS port   : %LS_PORT%
 echo.
-echo  1. Resonance flow: sync + doctor + quota + LS probe
-echo  2. Sync/update upstream repos
-echo  3. Install/update antigravity-usage CLI
-echo  4. Run antigravity-usage commands
-echo  5. Start Antigravity Tools LS from source
-echo  6. Probe/open LS dashboard
-echo  7. Build/install Quota Watcher VSIX
-echo  8. Write health report
-echo  9. Install Antigravity Tools LS release app
-echo  C. Open AntiQuotar Control CMS
-echo  S. Auto setup environment
-echo  Q. Quit
+echo Launching AntiQuotar 1-Click Automation Service...
+echo ------------------------------------------------------------
 echo.
-choice /C 123456789CSQ /N /M "Select an action: "
-if errorlevel 12 goto end
-if errorlevel 11 goto action_setup
-if errorlevel 10 goto action_control
-if errorlevel 9 goto action_install_ls_release
-if errorlevel 8 goto action_health
-if errorlevel 7 goto action_watcher
-if errorlevel 6 goto action_probe
-if errorlevel 5 goto action_ls
-if errorlevel 4 goto action_usage
-if errorlevel 3 goto action_install_usage
-if errorlevel 2 goto action_sync
-if errorlevel 1 goto action_resonate
+echo [1/3] Checking core dependencies...
+where node >nul 2>&1
+if errorlevel 1 (
+  echo [ERROR] Node.js is missing. Please install Node.js 18+.
+  pause
+  exit /b 1
+)
+where python >nul 2>&1
+if errorlevel 1 (
+  echo [ERROR] Python is missing. Please install Python 3+.
+  pause
+  exit /b 1
+)
+
+echo [2/3] Starting Local Servers (CORS Bridge & Mock LS Gateway)...
+start "AntiQuotar Quota Bridge" /min cmd /c "cd /d "%ROOT%" && python "%ROOT%\tools\local-bridge.py""
+start "AntiQuotar Mock LS Gateway" /min cmd /c "cd /d "%ROOT%" && python "%ROOT%\tools\mock-ls-gateway.py""
+
+echo [3/3] Starting AntiQuotar Control CMS (Port 5173)...
+if not exist "%ROOT%\node_modules" (
+  echo Installing React dependencies...
+  call npm install
+)
+start "AntiQuotar Control CMS" /min cmd /c "cd /d "%ROOT%" && npm run dev -- --host 127.0.0.1 --port %CONTROL_PORT%"
+
+echo.
+echo ============================================================
+echo  AntiQuotar is now RUNNING!
+echo  - Control CMS: http://127.0.0.1:%CONTROL_PORT%
+echo  - CORS Bridge: http://127.0.0.1:5189
+echo ============================================================
+echo.
+timeout /t 3 /nobreak >nul
+start "" "http://127.0.0.1:%CONTROL_PORT%"
+exit /b 0
 
 :action_resonate
 call :resonate
@@ -512,7 +521,7 @@ echo.
 echo Starting AntiQuotar Control CMS on http://127.0.0.1:%CONTROL_PORT% ...
 start "AntiQuotar Control CMS :%CONTROL_PORT%" cmd /k "cd /d ""%ROOT%"" && npm run dev -- --host 127.0.0.1 --port %CONTROL_PORT%"
 echo Starting Quota Bridge Server on http://127.0.0.1:5189 ...
-start "AntiQuotar Quota Bridge :5189" cmd /k "cd /d ""%ROOT%"" && node ""%ROOT%\tools\local-bridge.js"""
+start "AntiQuotar Quota Bridge :5189" cmd /k "cd /d ""%ROOT%"" && python ""%ROOT%\tools\local-bridge.py"""
 timeout /t 3 /nobreak >nul
 start "" "http://127.0.0.1:%CONTROL_PORT%"
 exit /b 0
